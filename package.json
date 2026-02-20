@@ -1,0 +1,25 @@
+{
+  "name": "nobetci-eczane-platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "dev:shared": "pnpm --filter @nobetci/shared dev",
+    "dev:web": "pnpm --filter @nobetci/web dev",
+    "dev:api": "pnpm --filter @nobetci/api dev",
+    "dev:worker": "pnpm --filter @nobetci/worker dev",
+    "dev": "concurrently -n shared,web,api,worker -c magenta,cyan,green,yellow \"pnpm dev:shared\" \"pnpm dev:web\" \"pnpm dev:api\" \"pnpm dev:worker\"",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm --filter @nobetci/shared build && pnpm -r --filter \"!@nobetci/shared\" typecheck",
+    "smoke": "node scripts/smoke.mjs",
+    "test:manual-override": "pnpm --filter @nobetci/api test:manual-override",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:bootstrap": "pnpm --filter @nobetci/api exec node scripts/db-bootstrap.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2"
+  }
+}

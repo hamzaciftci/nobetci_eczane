@@ -1,0 +1,39 @@
+{
+  "name": "@nobetci/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --dir ../.. --filter @nobetci/shared build && nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "test:manual-override": "node scripts/manual-override.integration.mjs",
+    "lint": "echo \"api lint placeholder\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "bullmq": "^5.58.5",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/throttler": "^6.4.0",
+    "@nobetci/shared": "workspace:*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^17.2.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.8.0",
+    "luxon": "^3.7.2",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.10",
+    "@nestjs/schematics": "^11.0.9",
+    "@vercel/node": "^5.3.23",
+    "@types/node": "^24.4.0",
+    "@types/pg": "^8.15.5",
+    "typescript": "^5.9.2"
+  }
+}

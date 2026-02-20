@@ -1,0 +1,889 @@
+TOTAL_PAGES: 16
+
+
+===== PAGE 1 =====
+
+Türkiye Genelinde Nöbetçi Eczane Projesi için
+Derin Araştırma ve Detaylı İş Planı
+Pazar, Kullanıcı Davranışı ve Rekabet
+Pazar & Rakip Analizi
+Türkiye’de  “nöbetçi  eczane”  araması,  yüksek  aciliyetli  ve  yüksek  “niyet”  (intent)  taşıyan  bir  ihtiyaç
+kategorisi. Kullanıcı çoğu zaman “şimdi” çözüm arıyor; yanlış bilgi, gereksiz yönlendirme veya yavaş
+açılan sayfa doğrudan kullanıcı mağduriyetine dönüşüyor . Bu yüzden bu pazarın kritik başarı faktörleri
+“doğruluk”, “hız” ve “güven” ekseninde toplanıyor .
+Arama  davranışının  yerel  ve  acil  olduğunu  gösteren  güçlü  bir  sinyal,  Google’ın  “Year  in  Search”
+verilerindeki  “yakınımda”  kategorisi.  Türkiye’de  2022  “Yakınımda”  aramalarında  “yakınımda  nöbetçi
+eczane” sorgusu birinci sırada listelenmiş durumda.   Bu, ürününüzün özellikle mobil cihazlarda,
+konum odaklı ve hızlı etkileşim (arama/rota) beklentisiyle kullanılacağını destekler .
+Kamunun da aynı ihtiyaca yönelik merkezi bir çözüm üretmesi pazardaki kalıcılığı artırıyor:  e-Devlet
+üzerinden “TİTCK - Nöbetçi Eczane Sorgulama”  hizmeti sunuluyor ve il/ilçe + tarih seçimiyle nöbetçi
+eczane bilgisine erişim hedefleniyor .  Bu, verinin kurumlar arası bir süreçle zaten üretildiğini ve ülke
+çapında standardizasyon çabası olduğunu da ima eder . 
+Rakip manzarasına bakınca 3 ana küme görülüyor:
+Birinci küme “toplayıcı web portalları”. Rakip örnek olarak verdiğiniz site, nöbetçi eczaneleri il/ilçe bazlı
+derliyor; kendi kullanım koşullarında, “resmi eczacı odası sitelerinde yayınlanan listeleri özel yazılımla
+günlük kontrol ettiğini” ve ayrıca farklı kaynaklardan da “internette yayınlanmayan” listelere ulaştığını
+ifade ediyor; aynı metinde hata halinde sorumluluk kabul etmediğini ve gidilmeden önce telefonla teyit
+önerdiğini de açıkça belirtiyor .  Bu tarz portallar , kapsama alanı (çok il/ilçe) ve SEO görünürlüğüyle
+güçlü; ancak veri kaynağı/izlenebilirliği, güncelleme anı, “hangi kaynağa göre listelendiği” gibi güven
+unsurlarında fırsat alanı bırakabiliyor .
+İkinci  küme  “resmi/kurumsal  uygulamalar”.  Türk  Eczacıları  Birliği’nin  resmi  mobil  uygulaması
+“Eczanem  Nerede” ,  uygulama  açıklamasında  veritabanının  “54  Bölge  Eczacı  Odası  tarafından  anlık
+güncellendiği”  ve  teknoloji  gereksinimlerinin  Başarsoft  tarafından  sağlandığı  bilgisini  veriyor .  
+Başarsoft’un  ürün  sayfası  da  proje  sahibinin  Türk  Eczacıları  Birliği  olduğunu  ve  “54  eczacı  odası
+tarafından listelenen nöbetlerde %100 doğruluk” iddiasını pazarlama diliyle öne çıkarıyor .  Ayrıca bir
+eczacı odası duyurusunda, nöbetçi eczane verilerinin bir sistem üzerinden kaydedilip günlük kontrol
+edildiği; uygulamanın da “Eczacı Bilgi Sistemi” verilerini kullandığı anlatılıyor .   Bu küme, güven ve
+veri otoritesi açısından güçlü; fakat web öncelikli, SEO odaklı, çok dilli ve düşük bant genişliğinde ultra
+hızlı deneyim gibi alanlarda ayrı bir “ürünleştirme” fırsatı bulunabilir .
+Üçüncü küme “gönüllü/üçüncü parti ağlar ve uygulamalar”. Örneğin bazı siteler “saatte bir güncelleme”
+gibi iddialar paylaşabiliyor .  Ancak aynı ekosistemde “her nöbetçi eczane 24 saat hizmet verir” gibi
+genelleyici ifadeler de görülebiliyor .   Oysa resmi kılavuzda gece nöbetinde kapının açık olmasının1
+2
+3
+4
+5
+6
+7
+8
+9
+1
+
+===== PAGE 2 =====
+
+zorunlu olmadığı, hatta kapı kapalıysa zil bulundurma gibi düzenlemeler olduğu ve başvuru halinde
+hizmet verme zorunluluğu bulunduğu belirtilir .  Bu fark, üçüncü parti platformlarda içerik doğruluğu
+ve ifade kalitesi açısından risk olduğunu gösterir .
+Rakiplerin “güçlü yanları / zayıf yanları” özetle şu ana temalarda toplanıyor:
+Kapsam ve SEO gücü: Bazı portallar 81 il ve yüzlerce ilçe için içerik üreterek geniş görünürlük
+sağlıyor; örneğin rakip portal “81 il ve KKTC’de 996 ilçede” nöbetçi eczane listelediğini ve kendi
+veritabanındaki eczane adedini paylaşıyor .  Bu, trafik almak için güçlü bir zemin.
+Veri izlenebilirliği ve güven: Aynı portal, veriyi resmi odalardan ve başka kaynaklardan
+topladığını, hata halinde sorumluluk almadığını söylüyor .  Güven odaklı yeni üründe “kaynağı
+şeffaflaştırmak” ciddi fark yaratır .
+Nöbet zaman aralığı karmaşası: Nöbet “takvim günü” değil “mesai bitimi → ertesi sabah” gibi bir
+zaman aralığı. Rakip sayfalarda “mesai bitiminden sabaha kadar” gibi ifadeler var .  Bazı resmi
+sağlık müdürlüğü sayfalarında da nöbetin “bir sonraki gün saat 08:00’de bittiği” açıkça yazıyor . 
+ Bu zaman aralığını ürün kurgusunda doğru modellemek kritik.
+Fark yaratabileceğiniz alanlar:
+“Kaynak şeffaflığı” ve doğruluk puanı: Her sonucun yanında “Kaynak: X / Son güncelleme: Y /
+Doğruluk seviyesi: yüksek-orta-düşük” gibi bir güven katmanı.
+Ultra hızlı web deneyimi: İl/ilçe sayfalarını büyük ölçüde önceden üreterek ilk açılışı milisaniyelere
+indirmek; “bugün verisi”ni agresif cachelemek; düşük bağlantıda sade arayüz.
+Çoklu dil ve turist odaklı dil: En az TR/EN; kritik ifadeler (“Kapı açık olmak zorunda değil; zil ile
+hizmet”, “Gitmeden arayın”) doğru tercüme edilerek.
+Bildirim mantığı: “Bu akşam nöbetçi eczaneler” push yerine, kullanıcı izin verirse “favori il/ilçe”
+için web push/e-posta; veya PWA kısa yolu.
+Hata bildirimi ve düzeltme döngüsü: Kullanıcı/eczane odaklı “yanlış bilgi” raporlama, hızlı
+moderasyon ve değişiklik günlüğü.
+Veri Ekosistemi ve Veri Sağlama Stratejisi
+Veri Kaynakları & Veri Toplama Stratejisi
+Türkiye’de nöbetçi eczane verisi “tek bir açık veri seti” formatında herkese sunulmuyor; ancak resmi
+süreç ve yayın kanalları net biçimde tariflenmiş durumda.
+Resmi süreç (yüksek seviyede) şu şekilde özetlenebilir:
+Nöbet listelerini hazırlama sorumluluğunda eczacı odası/temsilcisi  var; listeler uygulamaya
+alınmadan önce il/ilçe sağlık müdürlüğü  onayına sunuluyor ve onayla yürürlüğe giriyor . 
+Onaylanan listelerin e-Devlet Kapısı üzerinden yayımlanması  ve vatandaşın bilgisine
+sunulması hedefleniyor . 
+Kılavuzda ayrıca listelerin il sağlık müdürlüğü internet sitesinde ilan edilmesi  gerektiği
+belirtiliyor . 
+Bu  tablonun  ürün  açısından  anlamı:  En  güvenilir  veri,  “eczacı  odası  +  sağlık  müdürlüğü  onayı”
+zincirinden geçen ve mümkünse e-Devlet/il sağlık müdürlüğü kanalında yayımlanan veridir . 10
+• 
+11
+• 
+4
+• 
+12
+13
+• 
+• 
+• 
+• 
+• 
+• 
+14
+• 
+15
+• 
+16
+17
+2
+
+===== PAGE 3 =====
+
+Resmi/yarı resmi yayın kanalları ve örnek formatlar
+e-Devlet:  İl/ilçe  ve  tarih  seçimiyle  sorgulama  ekranı  var .   Ancak  bu  ekrandan  programatik  veri
+çekmenin hukuki/teknik koşulları belirsiz; ayrıca e-Devlet’in yasal bildiriminde içerik ve materyallerin izin
+olmadan dağıtılamayacağı belirtiliyor (alıntı için kaynak gösterme istisnası dahil).   Bu nedenle e-
+Devlet’i  birincil  “veri  kaynağı”  gibi  kazımak  yerine,  mümkünse  resmi  kurumlarla  entegrasyon/
+anlaşma zemini olarak görmek daha güvenli.
+İl/ilçe  sağlık  müdürlükleri  ve  bağlı  birimler:  Örnek  olarak  bir  il  sağlık  müdürlüğü  sitesinde  nöbetçi
+eczane listesi tarih/saat ve tablo formatında yayınlanabiliyor .  Bazı illerde ayrı bir “nöbetçi eczane” alt
+alan  adıyla  arama  ekranı  da  görülebiliyor  (ör .  nöbetin  ertesi  gün  08:00’de  bittiği  bilgisi  gibi).  
+Formatlar HTML tablo, duyuru sayfası, hatta PDF ekleri şeklinde değişebiliyor . 
+Eczacı  odaları:  Örneklerde  günlük  nöbetçi  eczaneler  ilçe  başlıkları  altında  listeleniyor ,  telefon  ve
+doğrudan harita bağlantıları verilebiliyor .  Bazı odalarda sayfa JS ile çalışabildiği için (ilk yükte seçim
+ekranı gibi) scraping daha zorlaşabilir . 
+Türk Eczacıları Birliği ve resmi uygulamalar: Birliğin sitesinde bölge eczacı odaları listesi ve ayrıca “EBS
+giriş” gibi uygulama bağlantıları yer alıyor .   Resmi mobil uygulama açıklamasında veri tabanının
+odalar tarafından anlık güncellendiği ifade ediliyor .   Ayrıca bir eczacı odası duyurusunda nöbet
+verilerinin “NÖBSİS” benzeri bir sistemde tutulduğu ve günlük kontrol edildiği, ayrıca konum (enlem/
+boylam)  güncelliğinin  önemli  olduğu  anlatılıyor .   Bu,  arka  planda  sistematik  bir  veri  altyapısı
+olduğunu ve iyi bir iş birliği ile en yüksek doğruluk seviyesine ulaşılabileceğini gösterir .
+API var mı
+Kamuya açık, resmi bir “nöbetçi eczane API” dokümantasyonu bu araştırmada görünür değil; resmi
+kanal daha çok e-Devlet üzerinden kullanıcı arayüzü ve il/oda siteleri üzerinden ilan şeklinde çalışıyor .
+Buna karşın üçüncü taraf “API pazarı” örnekleri var . Örneğin bazı servis sağlayıcılar “nöbetçi eczane API”
+sunuyor .  Bu tip servislerin veri kaynağı, lisans durumu, güncelleme zinciri ve doğrulama modeli net
+değilse; ürününüzün “güven” vaadi için risk oluşturabilir .
+Resmi API yoksa scraping yapılabilir mi
+Teknik olarak scraping yapılabilir; pratikte birçok rakip zaten “resmi oda sitelerindeki listeleri günlük
+kontrol ettiğini” söylüyor .  Ancak sizin hedefiniz “daha güvenilir” olduğundan, scraping’i “son çare /
+geçiş çözümü” olarak kurgulamak, orta vadede ise izinli entegrasyona evrilmek daha doğru.
+Scraping’i seçtiğiniz senaryoda dikkat edilmesi gereken temel noktalar:
+Kaynağın kendi kullanım koşulları ve robots yönergeleri (varsa) ile uyumluluk.
+Trafik yüklememek için düşük hız, zamanlanmış çekim, cache ve ETag/If-Modified-Since gibi
+mekanizmalar .
+Kaynak değiştirdiğinde kırılan parse’ları hızlı fark etmek için “parser sağlık kontrolleri”.
+Kaynakta yer alan hatalı/veri dışı alanlara (bağış banner’ları, reklam blokları, duyuru içerikleri)
+karşı dayanıklılık. 
+e-Devlet gibi telif ve kullanım koşullarının açıkça sıkı olduğu bir alandan veri “koparma”
+yaklaşımından kaçınma; e-Devlet materyallerinin izin olmadan dağıtımı kısıtlanıyor . 2
+18
+19
+13
+20
+21
+22
+23
+5
+7
+24
+25
+4
+• 
+• 
+• 
+• 
+26
+• 
+27
+3
+
+===== PAGE 4 =====
+
+Bu kısım hukuki yorum içerdiği için uygulamaya geçmeden önce bir avukata danışılması gerekir .
+Veri doğrulama ve çapraz kontrol stratejisi
+Bu ürünün “çekirdek teknolojik avantajı” sadece scraping değil; çok kaynaklı doğrulama  olmalı.
+Önerilen güven modeli:
+Her il için “primer kaynak” + “sekonder kaynak” tanımlayın. Kılavuz, listelerin il sağlık müdürlüğü
+internet sitesinde ilan edilmesini de işaret ettiği için, çoğu ilde “sağlık müdürlüğü” iyi bir primer
+adaydır; oda sitesi sekonder olabilir . 
+Kayıt bazında eşleştirme: eczane adı (normalize), ilçe, telefon, adres benzerliği.
+Çakışma olduğunda:
+Kaynak otoritesi ağırlığı: “oda + müdürlük” zincirinden gelen kayıt daha yüksek puan alır . 
+Zaman damgası: daha yeni güncellenen kaynağa öncelik.
+İnsan moderasyonu: kritik illerde (yüksek trafik) çakışma queue’su.
+İleri  seviye  ama  pratik  bir  yöntem:  Kayıtların  yanında  “Kaynaklar:  [A],  [B]”  gösterip  “iki  kaynaktan
+doğrulandı” rozetini vermek. Bu, hem güveni artırır hem de bir kaynağın bozulması halinde kullanıcıyla
+şeffaf ilişki kurar .
+Veri güncelleme stratejisi
+Nöbet  hizmeti  bir  “gece-ertesi  sabah”  aralığı  olduğu  için,  “gün”  kavramını  saat  dilimi  ve  yerel
+uygulamayla uyumlu yönetmek gerekir . Bazı resmi sayfalarda nöbetin ertesi gün 08:00’de bittiği ifade
+ediliyor .  Rakip sayfalarda da “mesai bitiminden sabaha kadar” vurgusu yer alıyor . 
+Önerilen strateji:
+Sistem saat dilimi: Europe/Istanbul.
+“Aktif nöbet penceresi” mantığı: 
+00:00–08:00 arası: kullanıcı teknik olarak “dün akşam başlayan nöbeti” arıyor olabilir .
+08:00 sonrası: “bugün akşam” nöbeti için liste değişebilir .
+Çekim sıklığı:
+Düşük riskli iller: günde 2–4 kez (ör . sabah, öğlen, akşam).
+Yüksek riskli iller: akşam saatlerinde daha sık (ör . 10–15 dk).
+Gün bitimi işlemleri:
+“Bugün” tablosunu arşive yaz.
+Kaynaklardan yeni gün verisi gelmediyse “son doğrulama zamanı”nı kullanıcıya göster .
+Gelecek faz için eczanelerin/paysel odaların paneli fikri: Kılavuzda nöbet listelerinin sistem üzerinden
+onay süreçleri bulunduğu için (EBS-ESY gibi) böyle bir panelin “kamu sistemine alternatif” olarak değil;
+daha  çok  düzeltme  talebi,  iletişim,  konum  doğrulama  gibi  yardımcı  işlevlerde  konumlanması  daha
+gerçekçi. 
+Hukuki, KVKK ve Kurumsal İlişkiler
+Hukuki Çerçeve & KVKK
+Bu tip bir projede iki ana hukuki eksen var: (1) kişisel veriler ve dijital izleme (KVKK), (2) veri kaynağının
+kullanım hakkı, doğruluk-sorumluluk ve sektör reklam kısıtları.• 
+16
+• 
+• 
+• 28
+• 
+• 
+13 12
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+29
+4
+
+===== PAGE 5 =====
+
+KVKK açısından “kişisel veri var mı”
+KVKK Kurumu, kişisel veriyi “kimliği belirli ya da belirlenebilir gerçek kişiye ilişkin her türlü bilgi” olarak
+tanımlar; KVKK’nın koruma alanının “gerçek kişiler” olduğunu ve tüzel kişilerin bu kapsamda “ilgili kişi”
+sayılmadığını ayrıca vurgular . 
+Nöbetçi eczane listelerinde tipik alanlar: eczane adı, adres, telefon, konum linki, ilçe. Bu alanların bir
+kısmı  “işletme  bilgisi”  gibi  görünse  de  pratikte  eczane,  çoğu  zaman  eczacının  adı/soyadı  ile
+ilişkilendiğinden  (ör .  eczane  adı  kişi  adı  içeriyorsa)  “belirlenebilir  gerçek  kişi”  bağlantısı  doğabilir .
+Dolayısıyla güvenli tarafta kalmak için bu verileri KVKK kapsamına girebilecekmiş gibi ele almak ve
+aydınlatmayı buna göre tasarlamak daha doğru.
+Kullanıcı  tarafında  ise  konum  verisi  kritik:  KVKK,  konum  verisinin  gerçek  kişiyi  belirlenebilir  kılması
+halinde  kişisel  veri  olduğunu  açıkça  ifade  eder .   Bu  nedenle  “en  yakın  nöbetçi  eczane”  özelliği
+planlanıyorsa, konum bilgisini mümkün olduğunca cihaz içinde işlemek ve sunucuya göndermemek
+(privacy by design) KVKK riskini ciddi azaltır .
+Aydınlatma, açık rıza ve çerezler
+KVKK Kurumu, veri sorumlusunun aydınlatma yükümlülüğünün kapsamını ve hangi bilgilerin ilgili kişiye
+verilmesi gerektiğini açıklar .  Açık rızanın “belirli konuya ilişkin, bilgilendirilmeye dayanan ve özgür
+iradeyle” verilmesi gerektiği vurgulanır . 
+Web ürününüzde pratikte iki alan “yüksek risk”:
+Analitik/ölçüm çerezleri: KVKK’nın çerez rehberi ve kurul karar özetleri, uygun aydınlatma ve rıza
+yönetiminin önemine işaret eder . 
+Yurt dışına veri aktarımı: Çerez rehberinde, yurt dışındaki servis sağlayıcılar üzerinden çerez
+kullanımının yurt dışına veri aktarımı doğurabileceği ve ilgili mevzuata uygun yürütülmesi
+gerektiği belirtilir . 
+Bu nedenle MVP’de öneri:
+Analitik tarafı ya hiç kurmayın ya da “çerezsiz / self-hosted” bir çözümle başlayın; Google Analytics gibi
+çözümleri  ileri  faza  bırakın.  (Bu  öneri  uygulama  kararıdır;  hukuki  değerlendirme  için  avukata
+danışılmalıdır .)
+Yanlış bilgi riski, sorumluluk metinleri, kullanıcı güveni
+Rakip portal, hatalı listeleme olasılığına karşı sorumluluk kabul etmediğini ve eczaneye gitmeden önce
+telefonla  teyit  önerdiğini  kullanım  koşullarında  açıkça  yazar .   Benzer  şekilde  e-Devlet’in  yasal
+bildiriminde de platformun sunduğu içeriklerin doğruluk ve bütünlük garantisinin hizmet sahibi kuruma
+ait olduğu ve e-Devlet’in sorumlu tutulamayacağı belirtilir . 
+Sizin ürününüzde “disclaimer” sadece hukuki koruma değil; aynı zamanda doğru yönlendirme aracı
+olmalı. Çünkü resmi kılavuz gece nöbetinde kapının açık olmasının zorunlu olmadığını, kapı kapalıysa zil
+bulundurulması gerektiğini ve başvuru halinde hizmet verilmesinin zorunlu olduğunu söyler .   Bu
+kullanıcıya açıkça anlatılmazsa “eczane kapalıydı” algısı ürün güvenini zedeler .30
+31
+32
+33
+• 
+34
+• 
+35
+4
+18
+10
+5
+
+===== PAGE 6 =====
+
+Önerilen minimal metin yaklaşımı:
+Liste üstünde sabit bilgi: “Gitmeden önce telefonla arayın. Gece nöbetinde kapı açık olmayabilir;
+zil ile hizmet verilebilir .”
+Her il sayfasında kaynak ve saat: “Veri kaynağı: X; Son kontrol: 02:15”.
+“Yanlış bilgi bildir” butonu (operasyon bölümünde detaylandırılıyor).
+Eczacı odaları ve kurumlarla ilişki, atıf ve izin
+Kılavuz, nöbet listelerinin hazırlanması-onaylanması-yayımlanması sürecinde eczacı odası ve müdürlük
+koordinasyonunu tanımlar .  Ayrıca eczacı odalarının listeleri hazırlayıp onaya sunduğu, onay sonrası
+e-Devlet’te yayımlanabildiği ifade edilir .  Bu durum, verinin “kurumsal süreç ürünü” olduğunu ve iyi
+niyetli kullanımda dahi kaynak gösterme / izin / iş birliği normlarının önemli olacağını gösterir .
+Önerilen yol:
+MVP öncesi en azından pilot illerde ilgili eczacı odasına yazılı bilgilendirme: “Verinizi kaynak
+göstererek yayınlamak istiyoruz; hata bildirimlerini size düzenli ileteceğiz; isterseniz API/format
+standardı geliştirelim.”
+Sitede görünür atıf: “Veriler X kaynağı referans alınarak listelenir .” (Her il sayfasında).
+Mümkünse protokol: Trafik yüklememe, güncelleme saatleri, düzeltme kanalı.
+e-Devlet  verisini  doğrudan  kopyalama/scraping:  e-Devlet’in  telif  hakları  ve  kullanım  şartları,
+materyallerin  izin  olmadan  dağıtımını  kısıtlar .   Bu  nedenle  e-Devlet’i  “UI  kaynağı”  olarak
+kazımaktansa, kurumlarla resmi kanaldan entegrasyon zemini aramak daha güvenli bir strateji olur . Bu
+değerlendirme için avukata danışılmalıdır .
+Sitede mutlaka olması gereken sayfalar
+Asgari set:
+Kullanım Şartları (hata/eksiklik, sorumluluk sınırı, “önce arayın” uyarısı)
+Gizlilik Politikası (KVKK aydınlatma unsurlarıyla uyumlu)
+Çerez Politikası + tercihler (analitik/marketing çerezleri varsa) 
+Veri Sorumlusu / İletişim (KVKK madde 10 kapsamındaki kimlik ve iletişim bilgileri) 
+“Yanlış bilgi bildir” ve “Düzeltme talebi” sayfası
+Örnek “veri sorumlusu” şablonu (içerik önerisi, hukuki metin değildir):
+Veri sorumlusu unvanı, adres, e-posta
+İşlenen veri kategorileri: (site kullanım verileri, konum izni verildiyse konum verisi vb.)
+Amaçlar: hizmet sunumu, güvenlik, performans ölçümü
+Hukuki sebepler: (her kalem için ayrı değerlendirme; avukatla netleştirilmelidir)
+Haklar ve başvuru yöntemi
+Ürün Tasarımı ve Kullanıcı Deneyimi
+Kullanıcı Senaryoları & Ürün Özellikleri
+Bu ürünün “çekirdek akışı” mümkün olduğunca kısa olmalı: Kullanıcı il (gerekirse ilçe) seçer → en üstte
+“şu an aktif nöbet” listesi görünür → tek tıkla arama/rota.• 
+• 
+• 
+14
+36
+• 
+• 
+• 
+37
+• 
+• 
+• 34
+• 32
+• 
+• 
+• 
+• 
+• 
+• 
+6
+
+===== PAGE 7 =====
+
+Temel kullanıcı akışları:
+İl/ilçe seçerek nöbetçi eczane bulma: e-Devlet ekranında bile il seçimi + tarih seçimi ile sorgu yapısı var;
+kullanıcı zihni bunu bekliyor .  İdeal akış: ilk girişte şehir seçimi (veya otomatik öneri), açıklayıcı “saat
+aralığı” bilgisi, liste.
+Harita  üzerinden  eczane  görme:  Bazı  oda  siteleri  doğrudan  harita  linkleri  veriyor;  bu,  kullanıcı
+beklentisinin “adres okumak yerine map” olduğunu gösteriyor .  Harita katmanında iki yol var:
+OpenStreetMap + Leaflet: Leaflet’in mobil dostu, hafif bir harita JS kütüphanesi olduğu ve açık
+kaynak olduğu belirtiliyor .  OpenStreetMap verisi ODbL ile lisanslanıyor; attribution ve lisans
+uyumluluğu gerekir . 
+Google Maps platformu: Kullanım başına fiyatlandırma ve SKU bazlı maliyetler var; yüksek
+trafikte maliyet ve anahtar yönetimi önemli. 
+MVP için pratik öneri: Harita görünümünü OSM+Leaflet ile başlatmak; rota için “Google Maps’te aç” /
+“Apple Maps’te aç” gibi deep-link sunmak. Böylece hem maliyet hem de KVKK/çerez/3. taraf riskleri daha
+yönetilebilir olur .
+Telefonla arama: Rakipler de “gitmeden önce arayın” öneriyor; sizin üründe “tek tıkla ara” temel fayda
+olmalı. 
+Navigasyon  başlatma:  Harita  linkini  “tek  tık”  yapmak;  oda  sitelerinde  harita  linklerinin  varlığı  bu
+davranışa işaret ediyor . 
+İleri seviye özellikler:
+En yakın nöbetçi eczane: Konum verisi kişisel veri olduğu için izin ve tasarım önemli.   En güvenli
+model: konumu tarayıcıda alıp sunucuya göndermeden mesafe hesaplamak.
+Kullanıcının yaşadığı ili hatırlama: Sunucuda kullanıcı hesabı tutmadan, tarayıcı LocalStorage ile “son
+seçilen il/ilçe” saklamak KVKK yükünü azaltır (tercih verisi sunucuya gitmez).
+Resmi tatiller/özel günler: Kılavuz, ulusal/resmi/dini bayram ve genel tatil günlerinin dikkate alınacağını
+söyler .  Bu sebeple UI’da “resmi tatil nöbeti” veya “özel planlama” etiketi (kaynak sağlıyorsa) anlamlı.
+Çoklu dil: Turist için minimum EN. e-Devlet’in “Help for non-citizens” gibi bölümleri, kamunun da yabancı
+kullanıcıyı düşündüğünü gösteren bir işaret sayılabilir .  (Bu bir çıkarımdır; ürün destek kapsamını siz
+belirlersiniz.)
+Erişilebilirlik ve hız odaklı UX:
+“Salt metin / düşük veri modu”: e-Devlet bile “Salt Metin Görünümü” sunuyor; erişilebilirlik değeri
+yüksek. 
+Karanlık tema: Gece kullanım senaryosu güçlü olduğu için (nöbet araması) dark mode pratik bir
+konfor alanı.
+Net uyarılar: “Kapı açık olmayabilir , zil ile hizmet verilebilir” bilgisini resmi kılavuzla uyumlu
+şekilde göstermek gerekir . 2
+38
+• 
+39
+40
+• 
+41
+4
+38
+31
+42
+2
+• 
+2
+• 
+• 
+43
+7
+
+===== PAGE 8 =====
+
+İş Modeli, SEO ve Büyüme
+İş Modeli & Gelir Stratejisi
+Başlangıçta  ücretsiz  senaryoda  en  önemli  hedef  “trafik  +  güven  +  veri  doğruluğu”dur .  Gelir ,  yanlış
+kurgulanırsa güveni zedeler .
+Olası gelir modelleri:
+Reklam (Google Ads / banner):
+Artı: Kolay devreye alınır , erken gelir sağlar .
+Eksi: Çerez/izleme ile KVKK uyumluluğu (açık rıza, aydınlatma, yurt dışı aktarım) karmaşıklaşır .  Ayrıca
+acil durumda reklam UX’i kullanıcıyı rahatsız eder .
+Sponsorlu listeleme (eczane öne çıkarma):
+Artı: B2B gelir potansiyeli.
+Eksi: Sektörde “haksız rekabet” hassasiyeti var; nöbetçi eczaneler için haksız rekabete yol açacak ilan
+yasağı kılavuzda açıkça geçiyor .  Bu, sponsorluk modelini doğrudan yasaklıyor demek değildir; fakat
+çok dikkatli tasarım ve mutlaka hukuk/oda görüşü gerektirir .
+Kurumsal iş birlikleri (sigorta/özel hastane/sağlık platformları):
+Artı: Reklamsız gelir , marka işbirliği.
+Eksi: “Tarafsızlık” algısı; ayrıca veri paylaşımı anlaşmaları.
+API satışı (nöbetçi eczane API):
+Artı: B2B ölçeklenebilir gelir , ürününüzü “veri altyapısı”na dönüştürür .
+Eksi:  Kaynak  lisansı/izinleri  net  değilse  zincirleme  risk.  Resmi  API  olmadığı  için  kaynak  sahipleriyle
+anlaşma daha da kritik.
+Kısa ve orta vadeli gerçekçi senaryolar:
+İlk altı ay: Geliri “ikincil” tutun; hedefler: doğru veri, 81 ilde sürdürülebilir ingest, SEO ile organik trafik.
+Reklamı çok sınırlı ve çerezsiz ölçümle test etmek (veya hiç koymamak) daha güvenli olabilir . 
+Altı–on sekiz ay: Trafik oturduktan sonra iki gelir hattı daha gerçekçi:
+(1)  B2B  API  (izinli  veri),  (2)  kurumsal  entegrasyon  (hastane  zinciri/sağlık  platformu).  Bu  aşamada
+sponsorluk düşünülüyorsa, kılavuzdaki haksız rekabet hassasiyeti nedeniyle hukuk danışmanlığı şarttır .
+SEO, ASO ve Büyüme Stratejisi
+SEO omurgası: “il + ilçe” sayfaları. Rakiplerin il/ilçe bazlı çok sayıda sayfa üretmesi ve sayfalarda tarih
+bağlamı vermesi, SEO’nun pazarın ana dağıtım kanalı olduğunu gösteriyor . 
+URL mimarisi:
+/nobetci-eczane/{il}
+/nobetci-eczane/{il}/{ilce}
+(Opsiyonel) /nobetci-eczane/{il}/{ilce}/{tarih}34
+43
+34
+43
+44
+• 
+• 
+• 
+8
+
+===== PAGE 9 =====
+
+Burada  kritik  nokta:  “bugün”  sayfası  canonical  olmalı;  tarih  parametreli  sayfalar  indeks  yönetimiyle
+(noindex veya sınırlı) kontrol edilmeli, yoksa indeks şişmesi yaşanır .
+Structured data:
+Schema.org “Pharmacy” tipi mevcut; eczane sayfalarını bu tipte JSON-LD ile işaretlemek
+mümkün. 
+Google Search Central “LocalBusiness structured data” dokümanı, yerel işletme zengin sonuçları
+için gerekli/önerilen alanları tarif ediyor . 
+Core Web Vitals:
+Google, Core Web Vitals metriklerinin gerçek kullanıcı deneyimini ölçtüğünü ve arama başarısı için “iyi
+CWV” önerdiklerini belirtir .  Bu proje için CWV kritik; çünkü kullanıcılar acil durumda “sayfa açılmadı”
+toleransına sahip değil.
+İçerik stratejisi:
+SSS sayfası önerilen sorular:
+“Nöbetçi eczane nedir , saat kaçta değişir?”
+“Gece nöbetinde eczane kapısı açık mı?”
+“Listede var ama eczane kapalıysa ne yapmalıyım?”
+“İcap nöbeti ne demek?”
+“Konum izni vermeden en yakın eczaneyi bulabilir miyim?”
+Bu SSS’lerde “kapı açık olmak zorunda değil / zil” gibi resmi kılavuz bilgisini net ve kullanıcı diliyle vermek
+güveni artırır . 
+Sosyal medya ve keşif: Google organik ana kanal; ancak özellikle büyük şehirlerde geceleri X (Twitter) ve
+yerel haber sayfaları üzerinden “nöbetçi eczane” içerikleri de yayılıyor . Örneğin rakip portal “sitene ekle”
+ürününü  çok  sayıda  belediye  ve  yerel  site  kullandığını  iddia  ediyor;  bu,  dağıtım  kanalının  “embed
+ortaklıkları” olabileceğini gösterir . 
+ASO (ileri faz): Mobil uygulama çıkarıldığında “nöbetçi eczane + il adı” aramaları hedeflenebilir; resmi
+uygulama örnekleri zaten “en yakın eczane / il-ilçe seçimi” vaatlerine odaklanıyor . 
+Teknik Mimari, Operasyon ve Uygulama Planı
+Teknik Mimari & Teknoloji Seçimi
+Bu ürün iki ayrı sistem gibi düşünülmeli:
+Kullanıcıya çok hızlı yanıt veren “okuma” (read) katmanı
+Sürekli veri toplayan, doğrulayan ve normalize eden “ingestion” katmanı
+Frontend
+Web öncelikli hedef için, SEO + performans gereği SSR/SSG hibrit  yaklaşımı uygun.• 
+45
+• 
+46
+47
+• 
+• 
+• 
+• 
+• 
+43
+48
+49
+• 
+• 
+9
+
+===== PAGE 10 =====
+
+Öneri: Next.js tabanlı bir mimari, çünkü:
+“Incremental Static Regeneration (ISR)” ile statik sayfaları tam rebuild yapmadan güncelleyebilme
+yaklaşımı desteklenir; bu, binlerce il/ilçe sayfasında maliyeti düşürür . 
+Caching mekanizmaları ve performans dokümantasyonu güçlüdür . 
+Bu seçim zorunlu değil; ancak SEO ve yüksek trafik yönetimini sadeleştirir .
+Backend
+Backend iki parçaya ayrılmalı:
+Public API (kullanıcı uygulamasına servis): hızlı, cache odaklı
+Worker/ingestion servisleri: job queue, retry, parsing
+Dil/çatı seçimi konusunda karar kolaylaştıran karşılaştırma:
+Node.js/NestJS: - Artı: TypeScript ile frontend-backend paylaşımı; yüksek I/O işlerinde kuvvetli; job queue
+ekosistemi geniş. - Eksi: HTML parsing + PDF metin çıkarımı + NLP gibi işlerde Python kadar rahat değil.
+Python/FastAPI:  -  Artı:  Parsing,  veri  temizleme,  olası  PDF/OCR  işlemleri  ekosistemi  güçlü.  -  Eksi:
+Frontend ile tip paylaşımı daha sınırlı; büyük ekiplerde kod standardı yönetimi dikkat ister .
+Pragmatik öneri:
+MVP’de tek dilde ilerlemek istiyorsanız Node.js; veri işleme karmaşıklığı yüksek olacaksa Python. İleri
+fazda zaten worker’ları ayrı bir servis olarak konumlandırıp dil çeşitlendirebilirsiniz.
+Veritabanı ve cache
+Birincil DB: PostgreSQL (ilişkisel model, güçlü indeksleme).
+Cache: Redis (bugün verisini RAM’de tutmak, rate limit sayaçları).
+“Bugün” uçları için TTL cache: 5–10 dakika (kaynak güncelleme riskine karşı). Bu, “doğruluk” ile
+“hız” arasında dengeli bir noktadır .
+Arama ve filtreleme
+Hedef: il/ilçe/eczane adı araması.
+MVP: PostgreSQL ILIKE + trigram indeks veya full-text.
+Faz büyürse: Elasticsearch/OpenSearch (çoklu dil, typo toleransı).
+Veri toplama (task mimarisi)
+Kılavuz, listelerin bir “sistem üzerinden onaylanıp e-Devlet’te yayımlanması” gibi dijital akışlara işaret
+eder .  Ancak dışarıdan baktığınızda veri farklı formatlarda gelir .
+Önerilen ingestion tasarımı:
+Her il için “Source Adapter” (konfig + parser):
+Tür: HTML liste, HTML tablo, PDF ek, görsel, JS uygulama
+Güncelleme penceresi: saat aralığı• 
+50
+• 51
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+14
+• 
+• 
+• 
+10
+
+===== PAGE 11 =====
+
+Rate limit: saniyede kaç istek
+Scheduler:
+Günlük plan: sabah/akşam
+Olay tetikleyici: hata/bozulma/çakışma artışı
+Retry stratejisi:
+Geçici hata: exponential backoff
+Parser hatası: alarm + fallback kaynağa geçiş
+Performans:
+CDN ile statik içerik dağıtımı.
+“Bugün” ve “il/ilçe” sayfalarında stale-while-revalidate yaklaşımı (Next.js caching/ISR ile). 
+Güvenlik:
+API rate limiting (özellikle ileride public API satışı olursa).
+Bot trafiği için WAF/CDN kuralları.
+Kaynak sitelere karşı “nazik” crawling (kendi sisteminizin ban yememesi için).
+Logging & monitoring: İzlenmesi gereken metrikler
+API yanıt süresi (p95, p99)
+Cache hit ratio
+İl bazında veri çekim başarısı (%)
+Parser hata oranı (source adapter bazında)
+“Çakışma” oranı (cross-check mismatch)
+“Son başarılı güncelleme” (il/ilçe)
+Operasyonel Süreçler & İçerik Yönetimi
+Bu ürün “her gün yaşayan içerik” olduğu için operasyon tasarımı MVP’nin bir parçası olmak zorunda.
+Otomatik çekim başarısız olursa:
+“Degraded mode”: Son başarılı veriyi göster , üstte kırmızı uyarı: “Veri X saat önce güncellendi.”
+Fallback kaynak: O il için ikinci kaynaktan çekim dene (mümkünse).
+Manual override: Admin panelden “o il için bugünkü veri” manuel girilebilir olmalı (en azından
+büyük illerde).
+Admin paneli MVP’de gerekli mi:
+Eğer ilk günden 81 ili açacaksanız: Evet, minimal bir panel şart (kaynak yönetimi, manuel
+düzeltme, log görüntüleme).
+Eğer pilot illerle başlayacaksanız: İlk ay paneli çok minimal tutabilirsiniz; fakat “hata bildirimi”ni
+işlemek için yine bir arayüz/araç gerekir .
+Düzeltme talepleri:
+Kullanıcı “Yanlış bilgi bildir” formu: Eczane adı + ilçe + sorun türü (telefon yanlış, adres yanlış,
+nöbette değil, kapalı vb.).
+Eczane/oda için “resmi düzeltme” kanalı: e-posta ile doğrulama (kurumsal alan adı), ardından
+panel erişimi gibi. (Bu kısım hukuki ve operasyonel tasarım gerektirir .)• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 52
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+11
+
+===== PAGE 12 =====
+
+WhatsApp entegrasyonu: Türkiye’de yaygın olabilir; ancak KVKK açısından mesaj içerikleri kişisel veri
+içerebilir . WhatsApp gibi üçüncü tarafların veri işleme rolü ayrıca değerlendirilmelidir (avukat önerilir).
+Versiyonlama ve değişiklik kaydı:
+Her il/ilçe için “snapshot” saklayın: kaynak URL, parse zamanı, çıkan kayıtlar .
+Parser değiştiğinde “migration” notu: “Şu tarihte şu kaynaktan bu kaynağa geçildi.”
+Bu sayede hata çıktığında geriye dönük iz sürersiniz.
+Yol Haritası ve Önceliklendirme
+(Roadmap) yaklaşımı: Fazları “veri kalitesi ve kapsama” etrafında kurgulamak.
+MVP Fazı
+Zaman aralığı: yaklaşık iki ay.
+Beklenen çıktılar:
+Web (responsive) arayüz: il/ilçe seçimi + liste + arama + arama/rota butonları
+En az pilot iller için çok kaynaklı veri çekimi ve doğrulama (primer+sekonder)
+“Kaynak ve son güncelleme” göstergesi
+“Yanlış bilgi bildir” akışı + temel admin araçları
+KVKK ve temel hukuki sayfalar (kullanım şartları, gizlilik, çerez) 
+Gerekli roller:
+1 frontend (SEO + performans odaklı)
+1 backend (API + cache)
+1 data/ingestion geliştiricisi (parser)
+1 ürün/tasarım (akış ve içerik)
+Part-time hukuk danışmanı (KVKK + kullanım şartları)
+Pilot il seçimi (gerçekçi kriterler):
+Veri formatı “HTML liste” olan ve harita linki/telefonu düzenli veren odalarla başlamak; örnek
+olarak bazı odalarda liste doğrudan HTML’de erişilebilir . 
+Çok büyük iller (özellikle JS tabanlı ekranlar) veri toplama açısından daha zor olabilir; pilotu “orta
+zorluk + yüksek talep” ile dengelemek mantıklı.
+İkinci Faz
+Zaman aralığı: yaklaşık iki–altı ay.
+Beklenen çıktılar:
+Harita entegrasyonu (OSM+Leaflet) 
+Konuma göre “en yakın” (konumu sunucuya göndermeden) 
+Çoklu dil (TR/EN)
+Kaynak adapter sayısını artırarak kapsama büyütme (81 il hedefi)
+Gelişmiş izleme: kaynak bazlı SLA ve otomatik alarm• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 53
+• 
+• 
+• 
+• 
+• 
+• 
+21
+• 
+• 54
+• 31
+• 
+• 
+• 
+12
+
+===== PAGE 13 =====
+
+Üçüncü Faz
+Zaman aralığı: yaklaşık altı–on iki ay.
+Beklenen çıktılar:
+Mobil uygulama (native veya cross-platform)
+Eczaneler/eczacı odaları için “konum doğrulama + düzeltme talebi” paneli (kamu sistemine
+alternatif olmadan, yardımcı) 
+API ürünü (B2B)
+Gelir denemeleri (reklam/sponsorluk) için kontrollü A/B; özellikle haksız rekabet hassasiyeti
+nedeniyle hukuk görüşüyle 
+Riskler, Engeller ve Çözüm Önerileri
+Teknik riskler:
+Veri erişimi / scraping engellenmesi:
+Kaynak  siteler  yapısını  değiştirir ,  rate-limit  uygular  veya  erişimi  kapatabilir .  Rakipler  bile  “farklı
+kaynaklardan internette yayınlanmayan listelere ulaştığını” söyleyerek kaynağın değişkenliğine işaret
+ediyor . 
+Önlem: Çok kaynaqlı mimari, adapter izleme, “primer-sekonder” tasarımı, nazik crawling.
+JS ile çalışan sayfalar:
+Bazı oda sayfaları ilk yüklemede veri göstermeyip seçim ekranı sunabiliyor . 
+Önlem: Headless tarama sadece bu kaynaklarda; mümkünse alternatif kaynağa geçiş.
+PDF/görsel formatlar:
+Bazı kurumlar PDF yayınlıyor . 
+Önlem: PDF metin çıkarımı; mümkün değilse manuel (yüksek trafikli iller için). OCR’ı son çare.
+Hukuki riskler:
+Veri kullanım hakkı ve telif:
+e-Devlet telif/kullanım şartları, izin olmadan dağıtımı kısıtlar . 
+Önlem: e-Devlet’i scraping kaynağı yapmamak; oda/müdürlük kaynaklarını atıfla kullanmak; kurumlarla
+iş birliği aramak. Bu yaklaşım için avukata danışılmalı.
+Yanlış bilgi ve sorumluluk:
+Rakipler sorumluluk kabul etmeyip “önce arayın” diyor . 
+Önlem: Açık uyarı metinleri, son güncelleme zamanı, hata bildirme, hızlı düzeltme.
+Reklam/sponsorluk ve haksız rekabet:
+Kılavuz nöbetçi eczaneler için haksız rekabet yaratacak ilan yasağı içeriyor . 
+Önlem: Sponsorluk modelini ileri faza bırakmak; oda ve hukuk görüşü olmadan devreye almamak.
+Operasyonel riskler:
+Güncellemenin aksaması:
+Her  gün  değişen  veri  “tek  noktadan”  çekilemezse  aksamalar  olur .  Kılavuz  bile  gecikmeye  mahal• 
+• 
+7
+• 
+• 
+43
+4
+22
+55
+27
+4
+43
+13
+
+===== PAGE 14 =====
+
+verilmemesi için tedbir alınmasını vurgular . 
+Önlem: Alarm, fallback, manuel override, pilot illerde kaliteyi oturtup sonra genişlemek.
+Özet & Önerilen Başlangıç Stratejisi
+En mantıklı veri toplama yaklaşımı, “resmi süreci taklit etmek” değil; resmi sürecin ürettiği çıktıları izinli
+ve şeffaf  biçimde birleştirmek:
+Birincil hedef kaynaklar: İl sağlık müdürlükleri / bağlı resmi sayfalar (kılavuz ilan edilmesini işaret
+eder). 
+İkincil kaynaklar: Eczacı odalarının yayımladığı listeler (format uygunsa). 
+Resmi entegrasyon hedefi: Orta vadede Türk Eczacıları Birliği ve ilgili sistemlerle (EBS/NÖBSİS
+benzeri) iş birliği zemini aranması; çünkü resmi uygulamada veri güncelleme zinciri zaten odalar
+üzerinden tarif ediliyor . 
+Gerçekçi MVP senaryosu:
+İllerle başlama:
+İlk etapta “formatı düzenli, değişimi stabil” illerle (ör . HTML listesi açık ve harita/telefon alanları düzenli
+olanlar) başlayın. Bu sayede parsing motoru oturur . Ardından yüksek trafikli büyük illere genişleyin. (Bu
+öneri uygulama stratejisidir; kesin listeyi veri keşfiyle belirlemek gerekir .)
+Teknolojiyle başlama:
+Web: Next.js ile SSR/ISR + CDN cache (SEO ve hız için). 
+Harita: OSM + Leaflet (maliyet ve esneklik). 
+Veri: PostgreSQL + Redis.
+Ingestion: Job queue + il bazlı adapter mimarisi.
+İlk üç ay net hedefler:
+Pilot illerde veri doğruluğu ve “kaynak şeffaflığı”nı kanıtlamak (cross-check ile).
+Kapsamı büyütürken “bozulmayan” bir ingestion altyapısı kurmak (alarm + fallback).
+SEO temelini atmak: il/ilçe sayfaları, schema.org “Pharmacy” işaretlemesi ve LocalBusiness
+yönergelerine uygun structured data. 
+KVKK temel uyum: aydınlatma, çerez yönetimi, konum verisini mümkünse cihaz içinde işlemek. 
+Bu rapor , araştırma bulgularını ürün ve mimari kararlarına dönüştüren bir “iş planı” çerçevesi sunar;
+ancak  özellikle  KVKK,  telif/veri  kullanım  hakkı  ve  reklam/sponsorluk  gibi  alanlarda  uygulamaya
+geçmeden önce mutlaka bir avukata danışılması gerekir .
+https://trends.withgoogle.com/tr/year-in-search/2022/tr/
+https://trends.withgoogle.com/tr/year-in-search/2022/tr/
+Sağlık Bakanlığı - TİTCK - Nöbetçi Eczane Sorgulama
+https://www.turkiye.gov.tr/saglik-titck-nobetci-eczane-sorgulama
+Nöbetçi eczaneler e-Devlet'ten görülebilecek
+https://www.aa.com.tr/tr/saglik/nobetci-eczaneler-e-devletten-gorulebilecek/264971943
+• 
+16
+• 21
+• 
+56
+• 57
+• 54
+• 
+• 
+• 
+• 
+• 
+58
+• 
+59
+1
+224
+317
+14
+
+===== PAGE 15 =====
+
+https://www.eczaneler .gen.tr/kullanim-kosullari.php
+https://www.eczaneler .gen.tr/kullanim-kosullari.php
+https://play.google.com/store/apps/details?hl=tr&id=com.basarsoft.eczenemNerede
+https://play.google.com/store/apps/details?hl=tr&id=com.basarsoft.eczenemNerede
+https://www.basarsoft.com.tr/eczanem-nerede/
+https://www.basarsoft.com.tr/eczanem-nerede/
+https://www.balikesireczaciodasi.org.tr/duyuru/ebsdeki-eczane-konumlari-ve-eczanem-nerede-
+uygulamasi-hakkinda
+https://www.balikesireczaciodasi.org.tr/duyuru/ebsdeki-eczane-konumlari-ve-eczanem-nerede-uygulamasi-hakkinda
+https://adana.eczaneleri.net/seyhan-yeni-eczanesi
+https://adana.eczaneleri.net/seyhan-yeni-eczanesi
+https://adana.eczaneleri.net/merkez-nobetci-eczaneleri
+https://adana.eczaneleri.net/merkez-nobetci-eczaneleri
+https://keo.org.tr/dosyalar/files/_N%C3%B6bet%C3%A7i%20Eczanelerin_Ek.pdf
+https://keo.org.tr/dosyalar/files/_N%C3%B6bet%C3%A7i%20Eczanelerin_Ek.pdf
+https://www.eczaneler .gen.tr/
+https://www.eczaneler .gen.tr/
+https://www.eczaneler .gen.tr/nobetci-mardin-kiziltepe
+https://www.eczaneler .gen.tr/nobetci-mardin-kiziltepe
+Nöbetçi Eczaneler: Adana İl Sağlık Müdürlüğü
+https://nobetcieczane.adanasm.gov.tr/?utm_source=chatgpt.com
+https://www.lexpera.com.tr/resmi-gazete-disindaki-kaynak/metin/nobetci-eczanelerin-
+belirlenmesine-iliskin-kilavuz
+https://www.lexpera.com.tr/resmi-gazete-disindaki-kaynak/metin/nobetci-eczanelerin-belirlenmesine-iliskin-kilavuz
+https://www.turkiye.gov.tr/bilgilendirme?konu=yasalBildirim
+https://www.turkiye.gov.tr/bilgilendirme?konu=yasalBildirim
+https://bingolism.saglik.gov.tr/TR-244131/nobetci-eczane.html
+https://bingolism.saglik.gov.tr/TR-244131/nobetci-eczane.html
+https://www.adanaeo.org.tr/nobetci-eczaneler
+https://www.adanaeo.org.tr/nobetci-eczaneler
+https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/
+https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/
+https://www.teb.org.tr/content/28/Eczac%C4%B1-Odalar%C4%B1-Listesi
+https://www.teb.org.tr/content/28/Eczac%C4%B1-Odalar%C4%B1-Listesi
+Nöbetçi Eczane API
+https://collectapi.com/tr/api/health/nobetci-eczane-api?utm_source=chatgpt.com
+https://www.kvkk.gov.tr/Icerik/2050/Kisisel-Veriler
+https://www.kvkk.gov.tr/Icerik/2050/Kisisel-Veriler
+https://www.kvkk.gov.tr/Icerik/6726/COVID-19-ILE-MUCADELEDE-KONUM-VERISININ-ISLENMESI-VE-
+KISILERIN-HAREKETLILIKLERININ-IZLENMESI-HAKKINDA-BILINMESI-GEREKENLER-2-
+https://www.kvkk.gov.tr/Icerik/6726/COVID-19-ILE-MUCADELEDE-KONUM-VERISININ-ISLENMESI-VE-KISILERIN-
+HAREKETLILIKLERININ-IZLENMESI-HAKKINDA-BILINMESI-GEREKENLER-2-4
+549 56
+6
+7
+8
+9
+10 14 28 29 42 43
+11 44
+12 26
+13
+15 16 36
+18 27
+19 20
+21
+22
+23
+25
+30
+31
+15
+
+===== PAGE 16 =====
+
+Aydınlatma Yükümlülüğü | Kişisel Verileri Koruma Kurumu
+https://www.kvkk.gov.tr/Icerik/2033/Aydinlatma-Yukumlulugu-?utm_source=chatgpt.com
+https://www.kvkk.gov.tr/Icerik/2037/Acik-Riza-Alirken-Dikkat-Edilecek-Hususlar
+https://www.kvkk.gov.tr/Icerik/2037/Acik-Riza-Alirken-Dikkat-Edilecek-Hususlar
+https://www.kvkk.gov.tr/SharedFolderServer/CMSFiles/fb193dbb-
+b159-4221-8a7b-3addc083d33f.pdf
+https://www.kvkk.gov.tr/SharedFolderServer/CMSFiles/fb193dbb-b159-4221-8a7b-3addc083d33f.pdf
+https://www.turkiye.gov.tr/bilgilendirme?konu=gizlilik
+https://www.turkiye.gov.tr/bilgilendirme?konu=gizlilik
+https://antalyasehir .saglik.gov.tr/TR-1061432/nobetci-eczaneler .html
+https://antalyasehir .saglik.gov.tr/TR-1061432/nobetci-eczaneler .html
+https://leafletjs.com/
+https://leafletjs.com/
+https://wiki.openstreetmap.org/wiki/Open_Database_License
+https://wiki.openstreetmap.org/wiki/Open_Database_License
+https://developers.google.com/maps/billing-and-pricing/overview
+https://developers.google.com/maps/billing-and-pricing/overview
+https://schema.org/Pharmacy
+https://schema.org/Pharmacy
+https://developers.google.com/search/docs/appearance/structured-data/local-business
+https://developers.google.com/search/docs/appearance/structured-data/local-business
+https://developers.google.com/search/docs/appearance/core-web-vitals
+https://developers.google.com/search/docs/appearance/core-web-vitals
+Sitene Nöbetçi Eczane Ekle | Eczaneler .gen.tr
+https://www.eczaneler .gen.tr/sitene-ekle.php
+https://nextjs.org/docs/app/guides/incremental-static-regeneration
+https://nextjs.org/docs/app/guides/incremental-static-regeneration
+https://nextjs.org/docs/app/guides/caching
+https://nextjs.org/docs/app/guides/caching
+eczane-nobetpdf.pdf - Divriği Devlet Hastanesi
+https://divrigisadikozgurdh.saglik.gov.tr/Eklenti/167049/0/eczane-nobetpdf.pdf?utm_source=chatgpt.com32 53 59
+33
+34 35
+37
+38
+39 54
+40
+41
+45 58
+46
+47
+48
+50 52 57
+51
+55
+16

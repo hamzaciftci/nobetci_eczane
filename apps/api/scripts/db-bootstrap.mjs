@@ -16,7 +16,8 @@ const INIT_FILES = [
 
 const MIGRATION_FILES = [
   "../../../infra/postgres/migrations/20260220_sprint2.sql",
-  "../../../infra/postgres/migrations/20260220_live_realdata.sql"
+  "../../../infra/postgres/migrations/20260220_live_realdata.sql",
+  "../../../infra/postgres/migrations/20260220_active_duty_window.sql"
 ];
 
 async function runSqlFile(client, relativePath) {

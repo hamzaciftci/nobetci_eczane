@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "pnpm --dir ../.. --filter @nobetci/shared build && nest build",
+    "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "test:manual-override": "node scripts/manual-override.integration.mjs",
@@ -17,7 +17,6 @@
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
     "@nestjs/throttler": "^6.4.0",
-    "@nobetci/shared": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dotenv": "^17.2.1",
@@ -31,6 +30,7 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.9",
+    "@types/luxon": "^3.7.1",
     "@vercel/node": "^5.3.23",
     "@types/node": "^24.4.0",
     "@types/pg": "^8.15.5",

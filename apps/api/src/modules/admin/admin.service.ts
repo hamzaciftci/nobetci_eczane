@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { normalizePharmacyName, resolveActiveDutyWindow, toSlug } from "@nobetci/shared";
+import { normalizePharmacyName, resolveActiveDutyWindow, toSlug } from "../../shared";
 import { QueryResultRow } from "pg";
 import { ApiMetricsService } from "../../infra/api-metrics.service";
 import { DatabaseService } from "../../infra/database.service";
@@ -456,8 +456,8 @@ export class AdminService {
     const month = Number(match[2]);
     const day = Number(match[3]);
 
-    // Europe/Istanbul is UTC+3 year-round. 18:00 local => 15:00 UTC, 08:00 next day => 05:00 UTC.
-    const start = new Date(Date.UTC(year, month - 1, day, 15, 0, 0, 0));
+    // Europe/Istanbul is UTC+3 year-round. 08:00 local => 05:00 UTC, next day 08:00 => 05:00 UTC.
+    const start = new Date(Date.UTC(year, month - 1, day, 5, 0, 0, 0));
     const end = new Date(Date.UTC(year, month - 1, day + 1, 5, 0, 0, 0));
 
     return {

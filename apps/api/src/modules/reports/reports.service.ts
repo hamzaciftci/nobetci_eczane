@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { QueryResultRow } from "pg";
-import { toSlug } from "@nobetci/shared";
+import { toSlug } from "../../shared";
 import { DatabaseService } from "../../infra/database.service";
 import { CreateReportDto } from "./create-report.dto";
 

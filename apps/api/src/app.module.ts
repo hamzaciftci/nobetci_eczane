@@ -4,6 +4,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { join } from "path";
 import { InfraModule } from "./infra/infra.module";
+import { envValue } from "./infra/env.util";
 import { ProvincesModule } from "./modules/provinces/provinces.module";
 import { DutiesModule } from "./modules/duties/duties.module";
 import { NearestModule } from "./modules/nearest/nearest.module";
@@ -19,8 +20,8 @@ import { AdminModule } from "./modules/admin/admin.module";
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: Number(process.env.RATE_LIMIT_TTL ?? 60000),
-        limit: Number(process.env.RATE_LIMIT_LIMIT ?? 120)
+        ttl: Number(envValue(process.env.RATE_LIMIT_TTL) ?? 60000),
+        limit: Number(envValue(process.env.RATE_LIMIT_LIMIT) ?? 120)
       }
     ]),
     InfraModule,

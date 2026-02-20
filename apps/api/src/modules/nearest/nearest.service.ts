@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { resolveActiveDutyWindow } from "@nobetci/shared";
+import { resolveActiveDutyWindow } from "../../shared";
 import { QueryResultRow } from "pg";
 import { ApiMetricsService } from "../../infra/api-metrics.service";
 import { DatabaseService } from "../../infra/database.service";

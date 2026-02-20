@@ -1,4 +1,4 @@
-import { DutyRecordDto } from "@nobetci/shared";
+import type { DutyRecordDto } from "../lib/shared";
 import { pharmacyJsonLd } from "../lib/structured-data";
 
 export function PharmacyJsonLd({ items }: { items: DutyRecordDto[] }) {

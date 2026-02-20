@@ -5,7 +5,12 @@ dist
 coverage
 .env
 .env.local
+.env.*
+!.env.example
 .DS_Store
 *.log
+logs/
 apps/*/.next
 apps/*/dist
+.vercel
+.env*.local

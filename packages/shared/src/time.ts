@@ -15,7 +15,7 @@ export function resolveActiveDutyWindow(now = DateTime.now().setZone(ISTANBUL_TZ
     throw new Error("Cannot resolve dutyDate");
   }
 
-  const start = DateTime.fromISO(`${dutyDate}T18:00:00`, { zone: ISTANBUL_TZ });
+  const start = DateTime.fromISO(`${dutyDate}T08:00:00`, { zone: ISTANBUL_TZ });
   const end = start.plus({ days: 1 }).set({
     hour: 8,
     minute: 0,

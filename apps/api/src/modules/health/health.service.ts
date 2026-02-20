@@ -19,14 +19,14 @@ export class HealthService {
     try {
       await this.db.query("select 1 as ok");
       checks.postgres = true;
-    } catch {
+    } catch (error) {
       checks.postgres = false;
     }
 
     try {
       await this.redis.raw.ping();
       checks.redis = true;
-    } catch {
+    } catch (error) {
       checks.redis = false;
     }
 

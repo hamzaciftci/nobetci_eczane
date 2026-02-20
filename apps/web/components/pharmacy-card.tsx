@@ -1,4 +1,4 @@
-import { DutyRecordDto } from "@nobetci/shared";
+import type { DutyRecordDto } from "../lib/shared";
 import { toAppleMapsUrl, toGoogleMapsUrl, toOsmUrl } from "../lib/maps";
 import { SourceBadge } from "./source-badge";
 

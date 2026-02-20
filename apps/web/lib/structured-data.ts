@@ -1,4 +1,4 @@
-import { DutyRecordDto } from "@nobetci/shared";
+import type { DutyRecordDto } from "./shared";
 
 export function pharmacyJsonLd(item: DutyRecordDto) {
   return {

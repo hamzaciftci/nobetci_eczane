@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ProvinceDto } from "@nobetci/shared";
+import { ProvinceDto } from "../../shared";
 import { ApiMetricsService } from "../../infra/api-metrics.service";
 import { DatabaseService } from "../../infra/database.service";
 import { RedisService } from "../../infra/redis.service";

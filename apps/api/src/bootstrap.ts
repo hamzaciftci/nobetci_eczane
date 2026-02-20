@@ -2,10 +2,12 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
+import { envValue } from "./infra/env.util";
 
 export async function createNestApp() {
-  const corsOrigin = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",").map((item) => item.trim())
+  const rawCorsOrigin = envValue(process.env.CORS_ORIGIN);
+  const corsOrigin = rawCorsOrigin
+    ? rawCorsOrigin.split(",").map((item) => item.trim())
     : true;
 
   const app = await NestFactory.create(AppModule, {

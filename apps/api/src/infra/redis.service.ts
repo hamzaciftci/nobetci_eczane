@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import Redis from "ioredis";
+import { envValue } from "./env.util";
 
 type RedisLike = {
   get(key: string): Promise<string | null>;
@@ -112,8 +113,8 @@ export class RedisService implements OnModuleDestroy {
   private readonly client: RedisLike;
 
   constructor() {
-    const mode = process.env.REDIS_MODE?.toLowerCase();
-    const redisUrl = process.env.REDIS_URL;
+    const mode = envValue(process.env.REDIS_MODE)?.toLowerCase();
+    const redisUrl = envValue(process.env.REDIS_URL);
 
     if (mode === "memory" || !redisUrl) {
       this.client = new MemoryRedisClient();

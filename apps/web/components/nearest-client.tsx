@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DutyRecordDto } from "@nobetci/shared";
+import type { DutyRecordDto } from "../lib/shared";
 import { distanceKm } from "../lib/client-distance";
 import { toGoogleMapsUrl } from "../lib/maps";
 

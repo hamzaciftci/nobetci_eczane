@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { toSlug } from "@nobetci/shared";
+import { toSlug } from "../../../lib/shared";
 import { fetchDutyByProvince } from "../../../lib/api";
 import { DegradedBanner } from "../../../components/degraded-banner";
 import { PharmacyCard } from "../../../components/pharmacy-card";

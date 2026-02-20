@@ -1,14 +1,16 @@
 import { Metadata } from "next";
 import { ManualOverrideForm } from "./manual-override-form";
 import { OpsActions } from "./ops-actions";
+import { publicEnv } from "../../lib/env";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_URL = publicEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:4000");
 const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN;
 
 export const metadata: Metadata = {
   title: "Admin Panel"
 };
 
+export const dynamic = "force-dynamic";
 export const revalidate = 120;
 
 interface OverviewItem {

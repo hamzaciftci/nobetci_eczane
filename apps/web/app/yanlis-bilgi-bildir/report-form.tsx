@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { publicEnv } from "../../lib/env";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_URL = publicEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:4000");
 
 export function ReportForm() {
   const [message, setMessage] = useState<string | null>(null);

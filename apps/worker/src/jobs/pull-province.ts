@@ -543,7 +543,7 @@ async function upsertSource(
 }
 
 function resolveDutyBounds(dutyDate: string): { start: string; end: string } {
-  const start = DateTime.fromISO(`${dutyDate}T18:00:00`, { zone: "Europe/Istanbul" });
+  const start = DateTime.fromISO(`${dutyDate}T08:00:00`, { zone: "Europe/Istanbul" });
   const end = start.plus({ days: 1 }).set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
   return {
     start: start.toUTC().toISO() ?? "",

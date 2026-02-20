@@ -1,6 +1,7 @@
-import { DutyRecordDto, ProvinceDto } from "@nobetci/shared";
+import type { DutyRecordDto, ProvinceDto } from "./shared";
+import { publicEnv } from "./env";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_URL = publicEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:4000");
 
 interface DutyResponse {
   status: "ok" | "degraded";

@@ -56,7 +56,7 @@ duty as (
   select
     p.id, p.province_id, p.district_id,
     sd.duty_date,
-    ((sd.duty_date::text || ' 18:00:00')::timestamp at time zone 'Europe/Istanbul'),
+    ((sd.duty_date::text || ' 08:00:00')::timestamp at time zone 'Europe/Istanbul'),
     (((sd.duty_date + interval '1 day')::date::text || ' 08:00:00')::timestamp at time zone 'Europe/Istanbul'),
     96.00,
     2,

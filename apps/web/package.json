@@ -4,13 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "pnpm --dir ../.. --filter @nobetci/shared build && next build",
+    "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@nobetci/shared": "workspace:*",
     "next": "^15.4.6",
     "leaflet": "^1.9.4",
     "react": "^19.1.1",

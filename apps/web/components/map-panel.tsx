@@ -1,6 +1,6 @@
 "use client";
 
-import { DutyRecordDto } from "@nobetci/shared";
+import type { DutyRecordDto } from "../lib/shared";
 import dynamic from "next/dynamic";
 
 const MapContainer = dynamic(

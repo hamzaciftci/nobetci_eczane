@@ -29,7 +29,7 @@
   - `DATABASE_URL` (Neon URL da olabilir)
   - `REDIS_URL`
   - `PROVINCE_SLUGS`
-  - `ALLOW_STATIC_FALLBACK`
+  - `ALLOW_STATIC_FALLBACK` (`0` onerilir)
   - `ALLOW_FALLBACK_FOR_SECONDARY`
 
 ## Worker Alternative (GitHub Actions Cron)

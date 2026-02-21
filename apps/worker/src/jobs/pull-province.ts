@@ -342,7 +342,7 @@ async function maybeRaiseParserThresholdAlert(params: {
 }
 
 function shouldUseFallback(role: "primary" | "secondary"): boolean {
-  if (process.env.ALLOW_STATIC_FALLBACK === "0") {
+  if (process.env.ALLOW_STATIC_FALLBACK !== "1") {
     return false;
   }
   return role === "primary" || process.env.ALLOW_FALLBACK_FOR_SECONDARY === "1";

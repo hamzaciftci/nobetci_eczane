@@ -70,7 +70,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - Konum verisi server'a zorunlu olarak gonderilmez; nearest endpoint opsiyoneldir.
 - Worker, `source_endpoints` tablosunda aktif olan primer/sekonder kaynaklari kullanir.
 - `PROVINCE_SLUGS=all` iken worker sadece DB'de aktif kaynagi olan illeri otomatik yukler.
-- Parser veya kaynak hatasinda static fallback devreye girer ve `ingestion_alerts` tablosuna olay yazilir.
+- Static fallback varsayilan olarak kapalidir (`ALLOW_STATIC_FALLBACK=0`); acil durumda bilincli olarak acilabilir.
 - `source_endpoints` bos ise worker dahili pilot endpoint konfigu ile calismayi surdurur.
 - Web sayfalarinda OSM + Leaflet harita ve tamamen client-side "en yakin" modulu aktif.
 - `ADMIN_API_TOKEN` tanimliysa admin endpointlerinde `x-admin-token` gerekir.

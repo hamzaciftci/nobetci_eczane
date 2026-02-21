@@ -16,7 +16,7 @@
 ## Data Flow
 1. Worker `source_endpoints` tablosundan aktif kaynaklari province bazli yukler.
 2. Primer endpoint fetch + parse + `ingestion_runs`/`source_snapshots` kayitlari yazilir.
-3. Primer hata verirse fallback adapter devreye girer ve `ingestion_alerts` olayi yazilir.
+3. Primer hata verirse varsayilan davranis fallback kullanmamak ve son dogru veriyi korumaktir (fallback sadece explicit acil durum bayragi ile acilir).
 4. Sekonder kaynakla kayit bazli eslestirme ve confidence skorlama yapilir.
 5. Cakisma olursa `duty_conflicts` tablosuna yazilir.
 6. Onayli kayit `duty_records` + `duty_evidence` ile yayinlanir.

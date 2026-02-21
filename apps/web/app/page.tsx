@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { fetchProvinces } from "../lib/api";
+import { HomeCitySelector } from "../components/home-city-selector";
 
 export const revalidate = 3600;
 
@@ -13,26 +13,37 @@ export default async function HomePage() {
     error = err instanceof Error ? err.message : "Bilinmeyen hata";
   }
 
+  const nowLabel = new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    weekday: "long",
+    timeZone: "Europe/Istanbul"
+  }).format(new Date());
+
   return (
-    <main className="grid">
-      <section className="panel">
-        <h2 style={{ marginTop: 0 }}>Il Secerek Baslayin</h2>
-        <p className="muted">
-          Hedef: yuksek dogruluk, ultra hiz, kaynak seffafligi. Sayfalar ISR + SWR ile surekli taze tutulur.
-        </p>
-        {error ? <p className="danger">Servis erisimi yok: {error}</p> : null}
+    <main className="grid home-shell">
+      <section className="panel home-hero">
+        <p className="home-badge">Resmi kaynaklardan dogrulanan veri</p>
+        <h2 className="home-title">Nobetci Eczane</h2>
+        <p className="home-subtitle">Turkiye genelinde guncel nobetci eczane bilgisine hizlica ulasin.</p>
+        <p className="home-date">{nowLabel}</p>
+
+        <div className="home-highlights">
+          <span className="pill">81 il destekleniyor</span>
+          <span className="pill">Saatlik guncelleme</span>
+          <span className="pill">Kaynak seffafligi</span>
+        </div>
       </section>
 
-      <section className="grid cols-2">
-        {provinces.map((province) => (
-          <Link key={province.code} href={`/nobetci-eczane/${province.slug}`} className="panel" style={{ textDecoration: "none" }}>
-            <strong>{province.name}</strong>
-            <p className="muted" style={{ marginBottom: 0 }}>
-              /nobetci-eczane/{province.slug}
-            </p>
-          </Link>
-        ))}
-      </section>
+      {error ? (
+        <section className="panel degraded-banner">
+          <strong>Iller yuklenemedi</strong>
+          <p className="muted">Servis erisimi yok: {error}</p>
+        </section>
+      ) : (
+        <HomeCitySelector provinces={provinces} />
+      )}
     </main>
   );
 }

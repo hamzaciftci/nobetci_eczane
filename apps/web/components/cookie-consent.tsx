@@ -18,13 +18,13 @@ export function CookieConsent() {
   }
 
   return (
-    <div className="panel" style={{ position: "fixed", bottom: 16, right: 16, width: "min(480px, 92vw)", zIndex: 40 }}>
+    <div className="panel cookie-consent">
       <strong>Cerez Tercihi</strong>
       <p className="muted">Zorunlu cerezler disinda analytics cerezleri varsayilan olarak kapali tutulur.</p>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="cookie-actions">
         <button
           type="button"
-          className="btn"
+          className="btn btn-ghost"
           onClick={() => {
             localStorage.setItem("cookie_pref", "reject_optional");
             setVisible(false);

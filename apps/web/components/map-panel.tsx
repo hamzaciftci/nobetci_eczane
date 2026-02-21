@@ -1,24 +1,12 @@
 "use client";
 
-import type { DutyRecordDto } from "../lib/shared";
 import dynamic from "next/dynamic";
+import type { DutyRecordDto } from "../lib/shared";
 
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const CircleMarker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.CircleMarker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Popup),
-  { ssr: false }
-);
+const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
+const CircleMarker = dynamic(() => import("react-leaflet").then((mod) => mod.CircleMarker), { ssr: false });
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
 
 interface MapPanelProps {
   items: DutyRecordDto[];
@@ -27,10 +15,13 @@ interface MapPanelProps {
 
 export function MapPanel({ items, title = "Harita" }: MapPanelProps) {
   const points = items.filter((item) => item.lat !== null && item.lng !== null);
+
   if (!points.length) {
     return (
-      <section className="panel">
-        <h3 style={{ marginTop: 0 }}>{title}</h3>
+      <section className="panel map-panel">
+        <div className="map-header">
+          <h3>{title}</h3>
+        </div>
         <p className="muted">Bu liste icin harita koordinati bulunamadi.</p>
       </section>
     );
@@ -39,8 +30,12 @@ export function MapPanel({ items, title = "Harita" }: MapPanelProps) {
   const center = averageCenter(points);
 
   return (
-    <section className="panel">
-      <h3 style={{ marginTop: 0 }}>{title}</h3>
+    <section className="panel map-panel">
+      <div className="map-header">
+        <h3>{title}</h3>
+        <span className="pill">OpenStreetMap + Leaflet</span>
+      </div>
+
       <div className="map-shell">
         <MapContainer center={[center.lat, center.lng]} zoom={12} style={{ width: "100%", height: "100%" }}>
           <TileLayer
@@ -52,7 +47,7 @@ export function MapPanel({ items, title = "Harita" }: MapPanelProps) {
               key={`${item.ilce}-${item.eczane_adi}-${item.lat}-${item.lng}`}
               center={[item.lat as number, item.lng as number]}
               radius={8}
-              pathOptions={{ color: "#005f46", weight: 2 }}
+              pathOptions={{ color: "#0d6a78", weight: 2 }}
             >
               <Popup>
                 <strong>{item.eczane_adi}</strong>
@@ -65,9 +60,6 @@ export function MapPanel({ items, title = "Harita" }: MapPanelProps) {
           ))}
         </MapContainer>
       </div>
-      <p className="muted" style={{ marginBottom: 0, marginTop: 8 }}>
-        Harita: OpenStreetMap + Leaflet
-      </p>
     </section>
   );
 }

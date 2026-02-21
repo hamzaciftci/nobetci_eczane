@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { fetchDutyByDistrict } from "../../../../lib/api";
 import { DegradedBanner } from "../../../../components/degraded-banner";
-import { PharmacyCard } from "../../../../components/pharmacy-card";
-import { PharmacyJsonLd } from "../../../../components/pharmacy-jsonld";
 import { MapPanel } from "../../../../components/map-panel";
 import { NearestClient } from "../../../../components/nearest-client";
+import { PharmacyCard } from "../../../../components/pharmacy-card";
+import { PharmacyJsonLd } from "../../../../components/pharmacy-jsonld";
+import { fetchDutyByDistrict } from "../../../../lib/api";
 
 export const revalidate = 120;
 
@@ -29,13 +29,19 @@ export default async function DistrictPage({ params }: Props) {
   const duty = await fetchDutyByDistrict(il, ilce);
 
   return (
-    <main className="grid">
-      <section className="panel">
-        <h2 style={{ marginTop: 0 }}>
-          {ilce} / {il} Nobetci Eczaneler
+    <main className="grid city-page">
+      <section className="panel city-hero">
+        <p className="home-badge">Ilce odakli nobetci eczane listesi</p>
+        <h2>
+          {ilce.toLocaleUpperCase("tr-TR")} / {il.toLocaleUpperCase("tr-TR")}
         </h2>
-        <p className="muted">Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}</p>
-        <p className="muted">Durum: {duty.status === "degraded" ? "Degraded" : "2 kaynaktan dogrulama aktif"}</p>
+        <p className="muted">
+          Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
+        </p>
+        <div className="city-meta-chips">
+          <span className="pill">Durum: {duty.status === "degraded" ? "Degraded" : "Dogrulandi"}</span>
+          <span className="pill">Kayit: {duty.data.length}</span>
+        </div>
       </section>
 
       {duty.status === "degraded" ? (
@@ -46,12 +52,13 @@ export default async function DistrictPage({ params }: Props) {
           hint={duty.degraded_info?.hint}
         />
       ) : null}
+
       <PharmacyJsonLd items={duty.data} />
 
-      <section className="panel">
-        <h3 style={{ marginTop: 0 }}>Eczane Gosterim Modlari</h3>
+      <section className="panel mode-panel">
+        <h3>Eczane Gosterim Modlari</h3>
         <p className="muted">Bu ilce icin A4 cikti alin veya tam ekran canli pano modunu acin.</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="mode-actions">
           <Link className="btn primary" href={`/nobetci-eczane/${il}/${ilce}/yazdir`}>
             A4 Cikti Sayfasi
           </Link>
@@ -64,7 +71,7 @@ export default async function DistrictPage({ params }: Props) {
       <MapPanel items={duty.data} title="Ilce Harita Gorunumu" />
       <NearestClient items={duty.data} />
 
-      <section className="grid">
+      <section className="pharmacy-grid">
         {duty.data.map((item, idx) => (
           <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
         ))}

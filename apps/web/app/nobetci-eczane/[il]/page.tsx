@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { toSlug } from "../../../lib/shared";
-import { fetchDutyByProvince } from "../../../lib/api";
 import { DegradedBanner } from "../../../components/degraded-banner";
-import { PharmacyCard } from "../../../components/pharmacy-card";
-import { PharmacyJsonLd } from "../../../components/pharmacy-jsonld";
 import { MapPanel } from "../../../components/map-panel";
 import { NearestClient } from "../../../components/nearest-client";
+import { PharmacyCard } from "../../../components/pharmacy-card";
+import { PharmacyJsonLd } from "../../../components/pharmacy-jsonld";
+import { fetchDutyByProvince } from "../../../lib/api";
+import { toSlug } from "../../../lib/shared";
 
 export const revalidate = 120;
 
@@ -31,11 +31,17 @@ export default async function ProvincePage({ params }: Props) {
   const byDistrict = groupByDistrict(duty.data);
 
   return (
-    <main className="grid">
-      <section className="panel">
-        <h2 style={{ marginTop: 0 }}>{il} Nobetci Eczaneler</h2>
-        <p className="muted">Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}</p>
-        <p className="muted">Durum: {duty.status === "degraded" ? "Degraded" : "Dogrulandi"}</p>
+    <main className="grid city-page">
+      <section className="panel city-hero">
+        <p className="home-badge">Il geneli nobetci eczane listesi</p>
+        <h2>{il.toLocaleUpperCase("tr-TR")} NOBETCI ECZANELER</h2>
+        <p className="muted">
+          Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
+        </p>
+        <div className="city-meta-chips">
+          <span className="pill">Durum: {duty.status === "degraded" ? "Degraded" : "Dogrulandi"}</span>
+          <span className="pill">Kayit: {duty.data.length}</span>
+        </div>
       </section>
 
       {duty.status === "degraded" ? (
@@ -46,12 +52,13 @@ export default async function ProvincePage({ params }: Props) {
           hint={duty.degraded_info?.hint}
         />
       ) : null}
+
       <PharmacyJsonLd items={duty.data} />
 
-      <section className="panel">
-        <h3 style={{ marginTop: 0 }}>Eczane Gosterim Modlari</h3>
+      <section className="panel mode-panel">
+        <h3>Eczane Gosterim Modlari</h3>
         <p className="muted">Eczane camina asmak icin A4 cikti alin veya bu ilin canli panosunu tam ekranda acin.</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="mode-actions">
           <Link className="btn primary" href={`/nobetci-eczane/${il}/yazdir`}>
             A4 Cikti Sayfasi
           </Link>
@@ -61,13 +68,13 @@ export default async function ProvincePage({ params }: Props) {
         </div>
       </section>
 
-      <section className="panel">
-        <h3 style={{ marginTop: 0 }}>Ilce Kisayollari</h3>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <section className="panel district-panel">
+        <h3>Ilce Kisayollari</h3>
+        <div className="district-links">
           {Object.keys(byDistrict).map((districtName) => {
             const districtSlug = toSlug(districtName);
             return (
-              <Link className="btn" key={districtName} href={`/nobetci-eczane/${il}/${districtSlug}`}>
+              <Link className="pill district-chip" key={districtName} href={`/nobetci-eczane/${il}/${districtSlug}`}>
                 {districtName}
               </Link>
             );
@@ -78,7 +85,7 @@ export default async function ProvincePage({ params }: Props) {
       <MapPanel items={duty.data} title="Il Geneli Harita" />
       <NearestClient items={duty.data} />
 
-      <section className="grid">
+      <section className="pharmacy-grid">
         {duty.data.map((item, idx) => (
           <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
         ))}

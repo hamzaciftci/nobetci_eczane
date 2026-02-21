@@ -29,12 +29,12 @@ export function DisplayControls() {
   };
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button type="button" className="btn" onClick={toggleDark}>
-        {dark ? "Aydinlik Tema" : "Karanlik Tema"}
+    <div className="display-controls">
+      <button type="button" className="btn btn-ghost" onClick={toggleDark}>
+        {dark ? "Aydinlik" : "Karanlik"}
       </button>
-      <button type="button" className="btn" onClick={toggleLowData}>
-        {lowData ? "Normal Mod" : "Dusuk Veri Modu"}
+      <button type="button" className="btn btn-ghost" onClick={toggleLowData}>
+        {lowData ? "Normal" : "Dusuk Veri"}
       </button>
     </div>
   );

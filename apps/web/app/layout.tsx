@@ -1,10 +1,22 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { DM_Serif_Display, Manrope } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
-import Link from "next/link";
 import { DisplayControls } from "../components/display-controls";
 import { CookieConsent } from "../components/cookie-consent";
 import { RouteMode } from "../components/route-mode";
+
+const bodyFont = Manrope({
+  subsets: ["latin"],
+  variable: "--font-body"
+});
+
+const headingFont = DM_Serif_Display({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-heading"
+});
 
 export const metadata: Metadata = {
   title: "Nobetci Eczane Platformu",
@@ -17,33 +29,43 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr">
-      <body>
+      <body className={`${bodyFont.variable} ${headingFont.variable}`}>
         <RouteMode />
-        <div className="page site-shell">
-          <header className="site-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-            <Link href="/" style={{ textDecoration: "none" }}>
-              <h1 style={{ margin: 0, fontSize: 24 }}>Nobetci Eczane</h1>
+
+        <div className="site-shell page">
+          <header className="topbar">
+            <Link href="/" className="brand" aria-label="Ana sayfa">
+              <span className="brand-mark">E</span>
+              <span className="brand-word">Nobetci Eczane</span>
             </Link>
-            <DisplayControls />
+
+            <div className="topbar-actions">
+              <span className="verify-pill">Kaynak dogrulaniyor</span>
+              <DisplayControls />
+            </div>
           </header>
-          <p className="muted site-disclaimer">
-            Gitmeden once telefonla arayin. Gece nobetinde kapi acik olmayabilir; zil ile hizmet verilebilir.
-          </p>
-          <nav className="site-nav" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-            <Link href="/kullanim-sartlari" className="pill">
+
+          <nav className="quick-nav">
+            <Link href="/kullanim-sartlari" className="pill nav-pill">
               Kullanim Sartlari
             </Link>
-            <Link href="/gizlilik-politikasi" className="pill">
+            <Link href="/gizlilik-politikasi" className="pill nav-pill">
               Gizlilik Politikasi
             </Link>
-            <Link href="/cerez-politikasi" className="pill">
+            <Link href="/cerez-politikasi" className="pill nav-pill">
               Cerez Politikasi
             </Link>
-            <Link href="/yanlis-bilgi-bildir" className="pill">
+            <Link href="/yanlis-bilgi-bildir" className="pill nav-pill">
               Yanlis Bilgi Bildir
             </Link>
           </nav>
+
+          <p className="muted site-disclaimer">
+            Gitmeden once telefonla arayin. Gece nobetinde kapi kapali olabilir, zil ile hizmet verilebilir.
+          </p>
+
           {children}
+
           <div className="cookie-wrap">
             <CookieConsent />
           </div>

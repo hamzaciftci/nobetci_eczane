@@ -6,12 +6,10 @@ interface SourceBadgeProps {
 
 export function SourceBadge({ source, updatedAt, verificationCount }: SourceBadgeProps) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+    <div className="source-strip">
       <span className="pill">Kaynak: {source}</span>
-      <span className="pill">Son Guncelleme: {updatedAt ? new Date(updatedAt).toLocaleTimeString("tr-TR") : "-"}</span>
-      {typeof verificationCount === "number" ? (
-        <span className="pill">Dogrulama: {verificationCount} kaynak</span>
-      ) : null}
+      <span className="pill">Son guncelleme: {updatedAt ? new Date(updatedAt).toLocaleTimeString("tr-TR") : "-"}</span>
+      {typeof verificationCount === "number" ? <span className="pill">Dogrulama: {verificationCount} kaynak</span> : null}
     </div>
   );
 }

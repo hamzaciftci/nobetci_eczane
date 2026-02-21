@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DutyRecordDto } from "../lib/shared";
 import { distanceKm } from "../lib/client-distance";
 import { toGoogleMapsUrl } from "../lib/maps";
+import type { DutyRecordDto } from "../lib/shared";
 
 interface NearestClientProps {
   items: DutyRecordDto[];
@@ -44,6 +44,7 @@ export function NearestClient({ items }: NearestClientProps) {
           }))
           .sort((a, b) => a.distance_km - b.distance_km)
           .slice(0, 3);
+
         setResult(nearest);
         setState("ready");
       },
@@ -60,28 +61,26 @@ export function NearestClient({ items }: NearestClientProps) {
   }
 
   return (
-    <section className="panel">
-      <h3 style={{ marginTop: 0 }}>En Yakin Nobetci (Client-Side)</h3>
-      <p className="muted">Konumunuz sunucuya gonderilmez. Mesafe hesabi sadece tarayicida yapilir.</p>
+    <section className="panel nearest-panel">
+      <div className="nearest-head">
+        <h3>En Yakin Nobetci (Client-Side)</h3>
+        <span className="pill">KVKK: Konum sunucuya gitmez</span>
+      </div>
+
+      <p className="muted">Mesafe hesabi sadece tarayicida yapilir.</p>
       <button type="button" className="btn primary" onClick={findNearest} disabled={state === "loading"}>
         {state === "loading" ? "Konum Aliniyor..." : "En Yakin Eczaneyi Bul"}
       </button>
 
-      {state === "error" && errorMessage ? (
-        <p className="danger" style={{ marginBottom: 0 }}>
-          {errorMessage}
-        </p>
-      ) : null}
+      {state === "error" && errorMessage ? <p className="danger">{errorMessage}</p> : null}
 
       {state === "ready" ? (
-        <div className="grid" style={{ marginTop: 10 }}>
+        <div className="nearest-list">
           {result.map((item) => (
-            <article className="panel" key={`${item.eczane_adi}-${item.distance_km}`}>
+            <article className="panel nearest-item" key={`${item.eczane_adi}-${item.distance_km}`}>
               <strong>{item.eczane_adi}</strong>
-              <p className="muted" style={{ margin: "6px 0" }}>
-                Mesafe: {item.distance_km} km
-              </p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <p className="muted">Mesafe: {item.distance_km} km</p>
+              <div className="card-actions">
                 <a className="btn primary" href={`tel:${item.telefon}`}>
                   Ara
                 </a>

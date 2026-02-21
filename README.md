@@ -34,10 +34,12 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 
 ## Otomatik Veri Guncelleme (GitHub Actions Cron)
 1. Bu repo'da `.github/workflows/ingestion-cron.yml` her saat basi (`0 * * * *`) `pnpm ingest:once` calistirir.
+   - Workflow, ingestion oncesi `pnpm sources:sync` calistirarak endpoint listesini DB ile esitler.
 2. GitHub repository secret ekleyin:
    - `DATABASE_URL` (Neon pooled URL, `sslmode=require`)
 3. Opsiyonel repository variable:
    - `INGESTION_PROVINCES=all`
+   - `ENABLE_TITCK_SECONDARY=0|1` (default `0`)
 4. Manuel tetikleme:
    - `Actions > Ingestion Cron > Run workflow`
 
@@ -51,7 +53,9 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
    - `REQUIRE_ALL_81=1 pnpm sources:sync`
 4. Guncel listede olmayan endpointleri otomatik pasiflestirmek icin:
    - `PRUNE_MISSING_ENDPOINTS=1 pnpm sources:sync`
-5. Sonrasinda ingestion calistirin:
+5. e-Devlet secondary endpointlerini aktif etmek icin (varsayilan kapali):
+   - `ENABLE_TITCK_SECONDARY=1 pnpm sources:sync`
+6. Sonrasinda ingestion calistirin:
    - `pnpm ingest:once`
 
 ### Mevcut DB'yi Sprint 2'ye guncelleme

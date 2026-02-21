@@ -23,6 +23,8 @@
   - `pnpm db:bootstrap`
   - Script once-off calisir, init/migration SQL dosyalarini uygular.
   - Kaynak endpoint dosyasini DB'ye basmak icin: `pnpm sources:sync`
+  - e-Devlet secondary endpointleri varsayilan kapali gelir, acmak icin:
+    - `ENABLE_TITCK_SECONDARY=1 pnpm sources:sync`
 
 ## Worker (VPS)
 - Start Worker: `pnpm --filter @nobetci/worker start`
@@ -40,6 +42,7 @@
   - `DATABASE_URL`
 - Optional variable:
   - `INGESTION_PROVINCES` (`all`)
+  - `ENABLE_TITCK_SECONDARY` (`0` default, `1` ile aktif)
 - Command:
   - `pnpm ingest:once`
 

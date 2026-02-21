@@ -19,7 +19,7 @@ const VALID_FORMATS = new Set(["html", "html_table", "html_js", "pdf", "image", 
 
 const SPECIAL_RULES = [
   {
-    test: /osmaniyeeczaciodasi\.org\.tr\/nobetkarti/i,
+    test: /osmaniyeeczaciodasi\.org\.tr/i,
     sourceName: "Osmaniye Eczaci Odasi",
     sourceType: "pharmacists_chamber",
     format: "html",
@@ -52,6 +52,13 @@ const SPECIAL_RULES = [
     sourceType: "pharmacists_chamber",
     format: "html",
     parserKey: "istanbul_secondary_v1"
+  },
+  {
+    test: /turkiye\.gov\.tr\/saglik-titck-nobetci-eczane-sorgulama/i,
+    sourceName: "TITCK e-Devlet Nobetci Eczane",
+    sourceType: "official_integration",
+    format: "html",
+    parserKey: "generic_auto_v1"
   }
 ];
 
@@ -63,6 +70,7 @@ const SOURCE_LINKS_PATH = path.resolve(
 const DEFAULT_POLL_CRON = process.env.SOURCE_POLL_CRON ?? "0 * * * *";
 const PRUNE_MISSING_ENDPOINTS = process.env.PRUNE_MISSING_ENDPOINTS === "1";
 const REQUIRE_ALL_81 = process.env.REQUIRE_ALL_81 === "1";
+const ENABLE_TITCK_SECONDARY = process.env.ENABLE_TITCK_SECONDARY === "1";
 
 function parseCsvLine(line) {
   const values = [];
@@ -192,7 +200,7 @@ function inferParserKey(url, format, rawParserKey) {
   return "generic_auto_v1";
 }
 
-function inferSourceName(url, role, provinceName, rawSourceName) {
+function inferSourceName(url, role, provinceName, sourceType, rawSourceName) {
   const manual = String(rawSourceName ?? "").trim();
   if (manual) {
     return manual;
@@ -203,16 +211,33 @@ function inferSourceName(url, role, provinceName, rawSourceName) {
     return special.sourceName;
   }
 
-  if (role === "secondary") {
+  if (sourceType === "official_integration") {
+    return "TITCK e-Devlet Nobetci Eczane";
+  }
+  if (sourceType === "pharmacists_chamber") {
     return `${provinceName} Eczaci Odasi`;
   }
+  if (sourceType === "manual") {
+    return `${provinceName} Manuel Kaynak`;
+  }
+
   return `${provinceName} Il Saglik Mudurlugu`;
 }
 
-function inferAuthority(role, rawAuthority) {
+function inferAuthorityBySourceType(sourceType, role, rawAuthority) {
   const parsed = Number(rawAuthority);
   if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 100) {
     return Math.round(parsed);
+  }
+
+  if (sourceType === "official_integration") {
+    return 85;
+  }
+  if (sourceType === "pharmacists_chamber") {
+    return role === "secondary" ? 80 : 90;
+  }
+  if (sourceType === "health_directorate") {
+    return 90;
   }
   return role === "secondary" ? 80 : 90;
 }
@@ -249,13 +274,13 @@ async function upsertEndpoint(client, params) {
     insert into source_endpoints (
       source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
     )
-    values ($1, null, $2, $3, $4, $5, $6, true)
+    values ($1, null, $2, $3, $4, $5, $6, $7)
     on conflict (source_id, endpoint_url) do update set
       format = excluded.format,
       parser_key = excluded.parser_key,
       is_primary = excluded.is_primary,
       poll_cron = excluded.poll_cron,
-      enabled = true
+      enabled = excluded.enabled
     returning id
     `,
     [
@@ -264,11 +289,22 @@ async function upsertEndpoint(client, params) {
       params.format,
       params.parserKey,
       params.isPrimary,
-      params.pollCron
+      params.pollCron,
+      params.enabled
     ]
   );
 
   return Number(result.rows[0]?.id);
+}
+
+function shouldEnableEndpoint(url, isPrimary) {
+  if (isPrimary) {
+    return true;
+  }
+  if (/turkiye\.gov\.tr\/saglik-titck-nobetci-eczane-sorgulama/i.test(url)) {
+    return ENABLE_TITCK_SECONDARY;
+  }
+  return true;
 }
 
 async function main() {
@@ -365,9 +401,10 @@ async function main() {
           endpoint.url,
           endpoint.role,
           province.name,
+          sourceType,
           endpoint.rawSourceName
         );
-        const authorityWeight = inferAuthority(endpoint.role, endpoint.rawAuthority);
+        const authorityWeight = inferAuthorityBySourceType(sourceType, endpoint.role, endpoint.rawAuthority);
         const pollCron = String(row.poll_cron ?? "").trim() || DEFAULT_POLL_CRON;
 
         const sourceId = await upsertSource(client, {
@@ -385,7 +422,8 @@ async function main() {
           format,
           parserKey,
           isPrimary: endpoint.role === "primary",
-          pollCron
+          pollCron,
+          enabled: shouldEnableEndpoint(endpoint.url, endpoint.role === "primary")
         });
         endpointCount += 1;
 

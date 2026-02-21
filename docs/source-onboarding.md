@@ -21,6 +21,9 @@ Bu dosya, resmi kaynak linkleri geldikce tum illeri hizli sekilde sisteme baglam
   - `REQUIRE_ALL_81=1 pnpm sources:sync`
 - Dosyada olmayan endpointleri pasiflestir:
   - `PRUNE_MISSING_ENDPOINTS=1 pnpm sources:sync`
+- e-Devlet secondary endpointlerini aktif et:
+  - `ENABLE_TITCK_SECONDARY=1 pnpm sources:sync`
+  - Not: varsayilan `0` (kapali), cunku bu endpointte kurumsal entegrasyon/kimlik adimi gerekebilir.
 
 ## Parser/Fallback Kurallari
 - Ozel parserlar otomatik atanir:

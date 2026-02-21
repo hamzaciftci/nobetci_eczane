@@ -37,6 +37,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Sync source links
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DB_SSL_MODE: require
+          REQUIRE_ALL_81: "1"
+          PRUNE_MISSING_ENDPOINTS: "1"
+          ENABLE_TITCK_SECONDARY: ${{ vars.ENABLE_TITCK_SECONDARY || '0' }}
+        run: pnpm sources:sync
+
       - name: Run one-off ingestion
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

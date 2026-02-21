@@ -41,6 +41,19 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 4. Manuel tetikleme:
    - `Actions > Ingestion Cron > Run workflow`
 
+## 81 Il Kaynak Onboarding
+1. `infra/sources/province-links.csv` dosyasina linkleri ekleyin.
+   - Kolonlar: `province_slug,primary_url,secondary_url,...`
+   - `primary_url` zorunlu, `secondary_url` opsiyonel.
+2. Kaynaklari DB'ye senkronlayin:
+   - `pnpm sources:sync`
+3. Tum illerde primer link oldugunu zorunlu kilmak isterseniz:
+   - `REQUIRE_ALL_81=1 pnpm sources:sync`
+4. Guncel listede olmayan endpointleri otomatik pasiflestirmek icin:
+   - `PRUNE_MISSING_ENDPOINTS=1 pnpm sources:sync`
+5. Sonrasinda ingestion calistirin:
+   - `pnpm ingest:once`
+
 ### Mevcut DB'yi Sprint 2'ye guncelleme
 - Mevcut volume kullaniyorsaniz migration scriptini calistirin:
   - `Get-Content infra/postgres/migrations/20260220_sprint2.sql -Raw | docker exec -i nobetci-postgres psql -U postgres -d nobetci`
@@ -81,5 +94,6 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - `pnpm smoke`
 - `pnpm test:manual-override`
 - `pnpm db:bootstrap`
+- `pnpm sources:sync`
 - `scripts/deploy-staging.ps1`
 - `scripts/deploy-production.ps1`

@@ -17,7 +17,8 @@
     "test:manual-override": "pnpm --filter @nobetci/api test:manual-override",
     "db:up": "docker compose up -d postgres redis",
     "db:down": "docker compose down",
-    "db:bootstrap": "pnpm --filter @nobetci/api exec node scripts/db-bootstrap.mjs"
+    "db:bootstrap": "pnpm --filter @nobetci/api exec node scripts/db-bootstrap.mjs",
+    "sources:sync": "pnpm --filter @nobetci/api exec node scripts/sync-source-links.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

@@ -22,6 +22,7 @@
 - DB bootstrap:
   - `pnpm db:bootstrap`
   - Script once-off calisir, init/migration SQL dosyalarini uygular.
+  - Kaynak endpoint dosyasini DB'ye basmak icin: `pnpm sources:sync`
 
 ## Worker (VPS)
 - Start Worker: `pnpm --filter @nobetci/worker start`
@@ -48,10 +49,11 @@
 
 ## Release Flow
 1. `pnpm db:bootstrap` ile Neon schema/migration uygula
-2. API deploy (Vercel, `apps/api`)
-3. Web deploy (Vercel, `apps/web`)
-4. Smoke checks (`/api/health/ready`, `/api/iller`, il endpointleri)
-5. Worker deploy (VPS) ve ingestion log kontrolu
+2. `pnpm sources:sync` ile `infra/sources/province-links.csv` kayitlarini DB'ye yukle
+3. API deploy (Vercel, `apps/api`)
+4. Web deploy (Vercel, `apps/web`)
+5. Smoke checks (`/api/health/ready`, `/api/iller`, il endpointleri)
+6. Worker deploy (VPS) ve ingestion log kontrolu
    - Alternatif: GitHub Actions cron run success kontrolu
 
 ## Scripts

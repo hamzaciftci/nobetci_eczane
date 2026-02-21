@@ -42,6 +42,7 @@ function selectParser(parserKey: string): ParserFn {
     istanbul_primary_v1: parseIstanbulPrimaryRows,
     istanbul_secondary_v1: parseIstanbulSecondaryRows,
     osmaniye_eo_v1: parseOsmaniyeEczaciOdasiRows,
+    generic_auto_v1: parseGenericAutoRows,
     generic_table: parseTableRows,
     generic_list: parseListRows
   };
@@ -170,6 +171,10 @@ function parseOsmaniyeNobetkartiRows($: CheerioAPI): ParsedRow[] {
   });
 
   return dedupeRows(rows);
+}
+
+function parseGenericAutoRows($: CheerioAPI): ParsedRow[] {
+  return dedupeRows([...parseTableRows($), ...parseListRows($)]);
 }
 
 function parseAdanaEczaciOdasiRows($: CheerioAPI): ParsedRow[] {

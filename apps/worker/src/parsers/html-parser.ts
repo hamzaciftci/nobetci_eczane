@@ -64,6 +64,11 @@ function parseAdanaPrimaryRows($: CheerioAPI): ParsedRow[] {
 }
 
 function parseAdanaSecondaryRows($: CheerioAPI): ParsedRow[] {
+  const officialRows = parseAdanaEczaciOdasiRows($);
+  if (officialRows.length) {
+    return officialRows;
+  }
+
   const combined = dedupeRows([...parseListRows($), ...parseTableRows($)]);
   return refineRowsByDistrictDictionary(combined, ADANA_DISTRICTS, "Seyhan");
 }
@@ -167,6 +172,53 @@ function parseOsmaniyeNobetkartiRows($: CheerioAPI): ParsedRow[] {
   return dedupeRows(rows);
 }
 
+function parseAdanaEczaciOdasiRows($: CheerioAPI): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+
+  $("div.col-md-12.nobetci").each((_, cardEl) => {
+    const card = $(cardEl);
+
+    const pharmacyName = ensureEczaneSuffix(
+      cleanText(card.find("h4 strong").first().text()) || cleanText(card.find("h4").first().text())
+    );
+    if (!pharmacyName) {
+      return;
+    }
+
+    const phone = findPhone(
+      cleanText(card.find("a[href^='tel:']").first().text()) ||
+        cleanText(card.find("p").first().text()) ||
+        cleanText(card.text())
+    );
+    if (!phone) {
+      return;
+    }
+
+    const body = card.find("p").first().clone();
+    body.find("a, i").remove();
+    const address = cleanText(body.text());
+    if (!address) {
+      return;
+    }
+
+    const mapHref = card.find("a[href*='google.com/maps']").first().attr("href");
+    const coords = extractCoordinates(mapHref);
+    const districtName = detectAdanaDistrict($, cardEl) ?? "Seyhan";
+
+    rows.push({
+      districtName,
+      districtSlug: toSlug(districtName),
+      pharmacyName,
+      address,
+      phone,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null
+    });
+  });
+
+  return refineRowsByDistrictDictionary(dedupeRows(rows), ADANA_DISTRICTS, "Seyhan");
+}
+
 function parseAdanaAsmTableRows($: CheerioAPI): ParsedRow[] {
   const rows: ParsedRow[] = [];
   const table = $("table.dynamicTable").first();
@@ -222,7 +274,7 @@ function parseTableRows($: CheerioAPI): ParsedRow[] {
 
         const phone = findPhone(cells.join(" "));
         const pharmacyName = findPharmacyName(cells);
-        if (!phone || !pharmacyName) {
+        if (!phone || !pharmacyName || !isValidPharmacyName(pharmacyName)) {
           return;
         }
 
@@ -256,7 +308,7 @@ function parseListRows($: CheerioAPI): ParsedRow[] {
 
     const phone = findPhone(text);
     const pharmacyName = findPharmacyName(text.split(" ").filter(Boolean));
-    if (!phone || !pharmacyName) {
+    if (!phone || !pharmacyName || !isValidPharmacyName(pharmacyName)) {
       return;
     }
 
@@ -290,6 +342,15 @@ function detectDistrictName($: CheerioAPI, table: any): string | null {
 
 function detectDistrictFromAncestors($: CheerioAPI, node: any): string | null {
   const heading = $(node).closest("section,div").prevAll("h1,h2,h3,h4,strong").first().text();
+  const cleaned = cleanText(heading);
+  if (!cleaned) {
+    return null;
+  }
+  return cleaned.replace(/nobetci eczane(ler)?/gi, "").trim() || null;
+}
+
+function detectAdanaDistrict($: CheerioAPI, node: any): string | null {
+  const heading = $(node).prevAll("h1,h2,h3,h4,strong,.main-color").first().text();
   const cleaned = cleanText(heading);
   if (!cleaned) {
     return null;
@@ -333,6 +394,20 @@ function ensureEczaneSuffix(value: string): string {
   }
 
   return `${normalized} Eczanesi`;
+}
+
+function isValidPharmacyName(value: string): boolean {
+  const normalized = cleanText(value);
+  if (!normalized) {
+    return false;
+  }
+
+  const hasLetter = /[a-zA-ZçğıöşüÇĞİÖŞÜ]/.test(normalized);
+  if (!hasLetter) {
+    return false;
+  }
+
+  return normalized.length >= 3;
 }
 
 function findPhone(value: string): string | null {

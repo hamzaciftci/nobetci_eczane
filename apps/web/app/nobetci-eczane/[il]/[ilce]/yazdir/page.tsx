@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { fetchDutyByDistrict } from "../../../../../lib/api";
 import { PrintActions } from "../../../../../components/print-actions";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string; ilce: string }>;

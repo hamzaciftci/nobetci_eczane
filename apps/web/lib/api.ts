@@ -28,7 +28,7 @@ export async function fetchProvinces(): Promise<ProvinceDto[]> {
 
 export async function fetchDutyByProvince(ilSlug: string): Promise<DutyResponse> {
   const response = await fetch(`${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/nobetci`, {
-    next: { revalidate: 120, tags: [`duty:${ilSlug}`] }
+    cache: "no-store"
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch duty by province: ${response.status}`);
@@ -40,7 +40,7 @@ export async function fetchDutyByDistrict(ilSlug: string, ilceSlug: string): Pro
   const response = await fetch(
     `${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/${encodeURIComponent(ilceSlug)}/nobetci`,
     {
-      next: { revalidate: 120, tags: [`duty:${ilSlug}:${ilceSlug}`] }
+      cache: "no-store"
     }
   );
   if (!response.ok) {

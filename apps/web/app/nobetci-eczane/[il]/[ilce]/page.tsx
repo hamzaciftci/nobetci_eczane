@@ -7,7 +7,7 @@ import { PharmacyCard } from "../../../../components/pharmacy-card";
 import { PharmacyJsonLd } from "../../../../components/pharmacy-jsonld";
 import { fetchDutyByDistrict } from "../../../../lib/api";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string; ilce: string }>;
@@ -71,11 +71,18 @@ export default async function DistrictPage({ params }: Props) {
       <MapPanel items={duty.data} title="Ilce Harita Gorunumu" />
       <NearestClient items={duty.data} />
 
-      <section className="pharmacy-grid">
-        {duty.data.map((item, idx) => (
-          <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
-        ))}
-      </section>
+      {duty.data.length ? (
+        <section className="pharmacy-grid">
+          {duty.data.map((item, idx) => (
+            <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
+          ))}
+        </section>
+      ) : (
+        <section className="panel">
+          <h3>Aktif Kayit Bulunamadi</h3>
+          <p className="muted">Bu ilce icin API aktif nobet kaydi donmedi. Biraz sonra tekrar deneyin.</p>
+        </section>
+      )}
     </main>
   );
 }

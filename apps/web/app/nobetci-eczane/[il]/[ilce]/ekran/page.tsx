@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { fetchDutyByDistrict } from "../../../../../lib/api";
 import { ScreenRuntime } from "../../../../../components/screen-runtime";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string; ilce: string }>;

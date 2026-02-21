@@ -8,7 +8,7 @@ import { PharmacyJsonLd } from "../../../components/pharmacy-jsonld";
 import { fetchDutyByProvince } from "../../../lib/api";
 import { toSlug } from "../../../lib/shared";
 
-export const revalidate = 120;
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string }>;
@@ -85,11 +85,20 @@ export default async function ProvincePage({ params }: Props) {
       <MapPanel items={duty.data} title="Il Geneli Harita" />
       <NearestClient items={duty.data} />
 
-      <section className="pharmacy-grid">
-        {duty.data.map((item, idx) => (
-          <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
-        ))}
-      </section>
+      {duty.data.length ? (
+        <section className="pharmacy-grid">
+          {duty.data.map((item, idx) => (
+            <PharmacyCard key={`${item.eczane_adi}-${idx}`} item={item} />
+          ))}
+        </section>
+      ) : (
+        <section className="panel">
+          <h3>Aktif Kayit Bulunamadi</h3>
+          <p className="muted">
+            Bu il icin API aktif nobet kaydi donmedi. Biraz sonra tekrar deneyin veya ilce secerek kontrol edin.
+          </p>
+        </section>
+      )}
     </main>
   );
 }

@@ -75,7 +75,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - Web sayfalarinda OSM + Leaflet harita ve tamamen client-side "en yakin" modulu aktif.
 - `ADMIN_API_TOKEN` tanimliysa admin endpointlerinde `x-admin-token` gerekir.
 - `20260220_live_realdata.sql` migration'i `Eczaneler.gen.tr` kaynaklarini pasiflestirir; Adana ve Osmaniye resmi kaynaklarini aktif eder.
-- `20260221_osmaniye_endpoint_refresh.sql` migration'i Osmaniye endpointini `nobetci-eczaneler` olarak sabitler.
+- `20260221_osmaniye_endpoint_refresh.sql` migration'i Osmaniye endpointini `nobetkarti` olarak sabitler.
 
 ## Utility Scripts
 - `pnpm smoke`

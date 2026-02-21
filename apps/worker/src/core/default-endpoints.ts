@@ -68,7 +68,7 @@ export function getDefaultEndpoints(provinceSlug: string): SourceEndpointConfig[
         sourceName: "Osmaniye Eczaci Odasi",
         sourceType: "pharmacists_chamber",
         authorityWeight: 90,
-        endpointUrl: "https://www.osmaniyeeczaciodasi.org.tr/nobetci-eczaneler",
+        endpointUrl: "https://www.osmaniyeeczaciodasi.org.tr/nobetkarti",
         format: "html",
         parserKey: "osmaniye_eo_v1",
         isPrimary: true

@@ -18,7 +18,8 @@ const MIGRATION_FILES = [
   "../../../infra/postgres/migrations/20260220_sprint2.sql",
   "../../../infra/postgres/migrations/20260220_live_realdata.sql",
   "../../../infra/postgres/migrations/20260220_active_duty_window.sql",
-  "../../../infra/postgres/migrations/20260221_osmaniye_endpoint_refresh.sql"
+  "../../../infra/postgres/migrations/20260221_osmaniye_endpoint_refresh.sql",
+  "../../../infra/postgres/migrations/20260221_hourly_poll_all_enabled.sql"
 ];
 
 async function runSqlFile(client, relativePath) {

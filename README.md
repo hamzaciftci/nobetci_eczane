@@ -37,7 +37,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 2. GitHub repository secret ekleyin:
    - `DATABASE_URL` (Neon pooled URL, `sslmode=require`)
 3. Opsiyonel repository variable:
-   - `INGESTION_PROVINCES=osmaniye,adana` (veya `all`)
+   - `INGESTION_PROVINCES=all`
 4. Manuel tetikleme:
    - `Actions > Ingestion Cron > Run workflow`
 

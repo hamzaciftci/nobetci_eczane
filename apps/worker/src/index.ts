@@ -66,7 +66,7 @@ async function scheduleRecurringJobs(provinces: string[]) {
       {
         jobId: `pull:${provinceSlug}`,
         repeat: {
-          pattern: "*/15 * * * *"
+          pattern: "0 * * * *"
         },
         attempts: 5,
         backoff: {

@@ -56,7 +56,7 @@ async function main() {
 
 async function resolveProvinceSlugs(db: Pool): Promise<string[]> {
   const configured =
-    envValue(process.env.INGESTION_PROVINCES) ?? envValue(process.env.PROVINCE_SLUGS) ?? "osmaniye,adana";
+    envValue(process.env.INGESTION_PROVINCES) ?? envValue(process.env.PROVINCE_SLUGS) ?? "all";
 
   if (configured.toLowerCase() !== "all") {
     const values = configured
@@ -86,7 +86,7 @@ async function resolveProvinceSlugs(db: Pool): Promise<string[]> {
     return fromDb;
   }
 
-  logger.warn("No active province found in DB, falling back to osmaniye/adana");
+  logger.warn("No active province found in DB, falling back to pilot list");
   return ["osmaniye", "adana"];
 }
 

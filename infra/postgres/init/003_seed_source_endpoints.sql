@@ -41,7 +41,7 @@ on conflict (province_id, name) do update set
 insert into source_endpoints (
   source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
 )
-select s.id, null, 'https://istanbulism.saglik.gov.tr/TR-108128/nobetci-eczane.html', 'html', 'istanbul_primary_v1', true, '*/15 * * * *', true
+select s.id, null, 'https://istanbulism.saglik.gov.tr/TR-108128/nobetci-eczane.html', 'html', 'istanbul_primary_v1', true, '0 * * * *', true
 from sources s
 join provinces p on p.id = s.province_id
 where p.slug = 'istanbul' and s.name = 'Istanbul Il Saglik Mudurlugu'
@@ -55,7 +55,7 @@ on conflict (source_id, endpoint_url) do update set
 insert into source_endpoints (
   source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
 )
-select s.id, null, 'https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/', 'html', 'istanbul_secondary_v1', false, '*/15 * * * *', true
+select s.id, null, 'https://www.istanbuleczaciodasi.org.tr/nobetci-eczane/', 'html', 'istanbul_secondary_v1', false, '0 * * * *', true
 from sources s
 join provinces p on p.id = s.province_id
 where p.slug = 'istanbul' and s.name = 'Istanbul Eczaci Odasi'
@@ -69,7 +69,7 @@ on conflict (source_id, endpoint_url) do update set
 insert into source_endpoints (
   source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
 )
-select s.id, null, 'https://nobetcieczane.adanasm.gov.tr/', 'html_js', 'adana_primary_v1', true, '*/15 * * * *', true
+select s.id, null, 'https://nobetcieczane.adanasm.gov.tr/', 'html_js', 'adana_primary_v1', true, '0 * * * *', true
 from sources s
 join provinces p on p.id = s.province_id
 where p.slug = 'adana' and s.name = 'Adana Il Saglik Mudurlugu'
@@ -83,7 +83,7 @@ on conflict (source_id, endpoint_url) do update set
 insert into source_endpoints (
   source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
 )
-select s.id, null, 'https://www.adanaeo.org.tr/nobetci-eczaneler', 'html', 'adana_secondary_v1', false, '*/20 * * * *', true
+select s.id, null, 'https://www.adanaeo.org.tr/nobetci-eczaneler', 'html', 'adana_secondary_v1', false, '0 * * * *', true
 from sources s
 join provinces p on p.id = s.province_id
 where p.slug = 'adana' and s.name = 'Adana Eczaci Odasi'

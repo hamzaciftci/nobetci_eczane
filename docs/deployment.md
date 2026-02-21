@@ -38,7 +38,7 @@
 - Required secret:
   - `DATABASE_URL`
 - Optional variable:
-  - `INGESTION_PROVINCES` (`osmaniye,adana` veya `all`)
+  - `INGESTION_PROVINCES` (`all`)
 - Command:
   - `pnpm ingest:once`
 

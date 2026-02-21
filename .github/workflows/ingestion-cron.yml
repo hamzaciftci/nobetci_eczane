@@ -8,7 +8,7 @@ on:
       provinces:
         description: "Comma-separated province slugs (or all)"
         required: false
-        default: "osmaniye,adana"
+        default: "all"
 
 concurrency:
   group: ingestion-cron
@@ -42,7 +42,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           APP_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DB_SSL_MODE: require
-          INGESTION_PROVINCES: ${{ github.event.inputs.provinces || vars.INGESTION_PROVINCES }}
+          INGESTION_PROVINCES: ${{ github.event.inputs.provinces || vars.INGESTION_PROVINCES || 'all' }}
           ALLOW_STATIC_FALLBACK: "0"
           ALLOW_FALLBACK_FOR_SECONDARY: "0"
           LOG_LEVEL: info

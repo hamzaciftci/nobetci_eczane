@@ -9,7 +9,7 @@
     "dev:api": "pnpm --filter @nobetci/api dev",
     "dev:worker": "pnpm --filter @nobetci/worker dev",
     "dev": "concurrently -n shared,web,api,worker -c magenta,cyan,green,yellow \"pnpm dev:shared\" \"pnpm dev:web\" \"pnpm dev:api\" \"pnpm dev:worker\"",
-    "ingest:once": "pnpm --filter @nobetci/worker ingest:once",
+    "ingest:once": "pnpm --filter @nobetci/shared build && pnpm --filter @nobetci/worker ingest:once",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --filter @nobetci/shared build && pnpm -r --filter \"!@nobetci/shared\" typecheck",

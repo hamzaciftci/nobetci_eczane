@@ -27,7 +27,7 @@ select
   'html',
   'osmaniye_eo_v1',
   true,
-  '*/15 * * * *',
+  '0 * * * *',
   true
 from sources s
 join provinces p on p.id = s.province_id

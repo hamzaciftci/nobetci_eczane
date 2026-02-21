@@ -6,6 +6,7 @@ import { NearestClient } from "../../../components/nearest-client";
 import { PharmacyCard } from "../../../components/pharmacy-card";
 import { PharmacyJsonLd } from "../../../components/pharmacy-jsonld";
 import { fetchDutyByProvince } from "../../../lib/api";
+import { buildDailyDutyTitle } from "../../../lib/date";
 import { toSlug } from "../../../lib/shared";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { il } = await params;
   return {
-    title: `${il} Nobetci Eczaneler`,
+    title: buildDailyDutyTitle(il.toLocaleUpperCase("tr-TR")),
     description: `${il} icin aktif nobetci eczane listesi ve kaynak bilgisi`,
     alternates: {
       canonical: `/nobetci-eczane/${il}`

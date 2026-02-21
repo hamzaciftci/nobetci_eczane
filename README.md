@@ -33,7 +33,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
    - `NEXT_PUBLIC_API_BASE_URL=https://<api-domain>.vercel.app`
 
 ## Otomatik Veri Guncelleme (GitHub Actions Cron)
-1. Bu repo'da `.github/workflows/ingestion-cron.yml` her `15` dakikada bir `pnpm ingest:once` calistirir.
+1. Bu repo'da `.github/workflows/ingestion-cron.yml` her saat basi (`0 * * * *`) `pnpm ingest:once` calistirir.
 2. GitHub repository secret ekleyin:
    - `DATABASE_URL` (Neon pooled URL, `sslmode=require`)
 3. Opsiyonel repository variable:

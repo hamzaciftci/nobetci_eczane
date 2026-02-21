@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { fetchDutyByProvince } from "../../../../lib/api";
+import { buildDailyDutyTitle } from "../../../../lib/date";
 import { ScreenRuntime } from "../../../../components/screen-runtime";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { il } = await params;
   return {
-    title: `${il} Nobetci Eczane Fullscreen`,
+    title: `${buildDailyDutyTitle(il.toLocaleUpperCase("tr-TR"))} | Pano`,
     description: `${il} icin menuler gizli tam ekran nobetci eczane panosu`,
     robots: {
       index: false,

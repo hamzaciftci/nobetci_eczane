@@ -34,7 +34,7 @@
 
 ## Worker Alternative (GitHub Actions Cron)
 - Workflow: `.github/workflows/ingestion-cron.yml`
-- Schedule: her 15 dakika
+- Schedule: her saat basi (`0 * * * *`)
 - Required secret:
   - `DATABASE_URL`
 - Optional variable:

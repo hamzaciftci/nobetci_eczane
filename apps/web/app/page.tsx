@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import { fetchProvinces } from "../lib/api";
+import { buildDailyDutyTitle, formatIstanbulDateWithWeekday } from "../lib/date";
 import { HomeCitySelector } from "../components/home-city-selector";
 
 export const revalidate = 3600;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: buildDailyDutyTitle(),
+    description: "Türkiye genelinde güncel nöbetçi eczane bilgisine hızlı erişim."
+  };
+}
 
 export default async function HomePage() {
   let provinces: Awaited<ReturnType<typeof fetchProvinces>> = [];
@@ -13,13 +22,7 @@ export default async function HomePage() {
     error = err instanceof Error ? err.message : "Bilinmeyen hata";
   }
 
-  const nowLabel = new Intl.DateTimeFormat("tr-TR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    weekday: "long",
-    timeZone: "Europe/Istanbul"
-  }).format(new Date());
+  const nowLabel = formatIstanbulDateWithWeekday();
 
   return (
     <main className="grid home-shell">

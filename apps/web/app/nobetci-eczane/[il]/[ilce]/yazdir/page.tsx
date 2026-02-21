@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { fetchDutyByDistrict } from "../../../../../lib/api";
+import { buildDailyDutyTitle } from "../../../../../lib/date";
 import { PrintActions } from "../../../../../components/print-actions";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { il, ilce } = await params;
   return {
-    title: `${ilce} ${il} Nobetci Eczane A4 Cikti`,
+    title: `${buildDailyDutyTitle(`${ilce.toLocaleUpperCase("tr-TR")} / ${il.toLocaleUpperCase("tr-TR")}`)} | A4`,
     description: `${ilce}, ${il} icin o gunun nobetci eczanelerini A4 formatinda yazdirma sayfasi`,
     robots: {
       index: false,

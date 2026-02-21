@@ -110,7 +110,7 @@ insert into source_endpoints (
 select
   s.id,
   null,
-  'https://www.osmaniyeeczaciodasi.org.tr/nobetkarti',
+  'https://www.osmaniyeeczaciodasi.org.tr/nobetci-eczaneler',
   'html',
   'osmaniye_eo_v1',
   true,
@@ -133,4 +133,4 @@ join provinces p on p.id = s.province_id
 where se.source_id = s.id
   and s.name = 'Osmaniye Eczaci Odasi'
   and p.slug = 'osmaniye'
-  and se.endpoint_url <> 'https://www.osmaniyeeczaciodasi.org.tr/nobetkarti';
+  and se.endpoint_url <> 'https://www.osmaniyeeczaciodasi.org.tr/nobetci-eczaneler';

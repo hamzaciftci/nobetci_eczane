@@ -32,6 +32,15 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 4. Web Vercel env:
    - `NEXT_PUBLIC_API_BASE_URL=https://<api-domain>.vercel.app`
 
+## Otomatik Veri Guncelleme (GitHub Actions Cron)
+1. Bu repo'da `.github/workflows/ingestion-cron.yml` her `15` dakikada bir `pnpm ingest:once` calistirir.
+2. GitHub repository secret ekleyin:
+   - `DATABASE_URL` (Neon pooled URL, `sslmode=require`)
+3. Opsiyonel repository variable:
+   - `INGESTION_PROVINCES=osmaniye,adana` (veya `all`)
+4. Manuel tetikleme:
+   - `Actions > Ingestion Cron > Run workflow`
+
 ### Mevcut DB'yi Sprint 2'ye guncelleme
 - Mevcut volume kullaniyorsaniz migration scriptini calistirin:
   - `Get-Content infra/postgres/migrations/20260220_sprint2.sql -Raw | docker exec -i nobetci-postgres psql -U postgres -d nobetci`
@@ -66,6 +75,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - Web sayfalarinda OSM + Leaflet harita ve tamamen client-side "en yakin" modulu aktif.
 - `ADMIN_API_TOKEN` tanimliysa admin endpointlerinde `x-admin-token` gerekir.
 - `20260220_live_realdata.sql` migration'i `Eczaneler.gen.tr` kaynaklarini pasiflestirir; Adana ve Osmaniye resmi kaynaklarini aktif eder.
+- `20260221_osmaniye_endpoint_refresh.sql` migration'i Osmaniye endpointini `nobetci-eczaneler` olarak sabitler.
 
 ## Utility Scripts
 - `pnpm smoke`

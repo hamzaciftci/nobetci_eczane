@@ -32,6 +32,16 @@
   - `ALLOW_STATIC_FALLBACK`
   - `ALLOW_FALLBACK_FOR_SECONDARY`
 
+## Worker Alternative (GitHub Actions Cron)
+- Workflow: `.github/workflows/ingestion-cron.yml`
+- Schedule: her 15 dakika
+- Required secret:
+  - `DATABASE_URL`
+- Optional variable:
+  - `INGESTION_PROVINCES` (`osmaniye,adana` veya `all`)
+- Command:
+  - `pnpm ingest:once`
+
 ## Data Layer
 - Neon PostgreSQL (daily backup + PITR)
 - Redis (Upstash/managed) veya API icin memory fallback
@@ -42,6 +52,7 @@
 3. Web deploy (Vercel, `apps/web`)
 4. Smoke checks (`/api/health/ready`, `/api/iller`, il endpointleri)
 5. Worker deploy (VPS) ve ingestion log kontrolu
+   - Alternatif: GitHub Actions cron run success kontrolu
 
 ## Scripts
 - `scripts/deploy-staging.ps1`

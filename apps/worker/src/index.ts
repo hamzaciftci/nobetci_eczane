@@ -19,7 +19,16 @@ const configuredProvinceSlugs = process.env.PROVINCE_SLUGS?.trim() ?? "all";
 const connection = {
   url: redisUrl
 };
-const db = new Pool({ connectionString: process.env.DATABASE_URL });
+const dbConnectionString = envValue(process.env.APP_DATABASE_URL) ?? envValue(process.env.DATABASE_URL);
+if (!dbConnectionString) {
+  throw new Error("APP_DATABASE_URL or DATABASE_URL is required for worker");
+}
+const db = new Pool({
+  connectionString: dbConnectionString,
+  max: Number(envValue(process.env.DB_POOL_MAX) ?? 10),
+  idleTimeoutMillis: Number(envValue(process.env.DB_IDLE_TIMEOUT_MS) ?? 10000),
+  ssl: resolveSsl(dbConnectionString)
+});
 const queue = new Queue(queueName, { connection });
 
 const worker = new Worker(
@@ -121,6 +130,34 @@ async function shutdown() {
   await queue.close();
   await db.end();
   process.exit(0);
+}
+
+function resolveSsl(connectionString: string) {
+  if (envValue(process.env.DB_SSL_MODE) === "disable") {
+    return false;
+  }
+
+  const requiresSsl =
+    connectionString.includes("sslmode=require") ||
+    connectionString.includes("neon.tech") ||
+    envValue(process.env.DB_SSL_MODE) === "require";
+
+  if (!requiresSsl) {
+    return false;
+  }
+
+  return {
+    rejectUnauthorized: false
+  };
+}
+
+function envValue(value: string | undefined): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const cleaned = value.replace(/^\uFEFF/, "").trim();
+  return cleaned.length ? cleaned : undefined;
 }
 
 process.on("SIGINT", shutdown);

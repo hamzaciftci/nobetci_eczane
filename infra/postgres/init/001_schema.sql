@@ -182,6 +182,8 @@ where dr.duty_date = (
     else (now() at time zone 'Europe/Istanbul')::date
   end
 )
+and dr.duty_start <= now()
+and dr.duty_end > now()
 group by
   dr.id,
   ph.canonical_name,

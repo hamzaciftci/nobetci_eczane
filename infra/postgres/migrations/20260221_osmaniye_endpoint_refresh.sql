@@ -1,22 +1,3 @@
-update source_endpoints
-set enabled = false
-where endpoint_url like 'https://www.eczaneler.gen.tr/%'
-   or parser_key = 'eczaneler_gen_tr_v1';
-
-update sources
-set enabled = false
-where name = 'Eczaneler.gen.tr';
-
-insert into sources (province_id, name, type, authority_weight, base_url, enabled)
-select p.id, 'Osmaniye Eczaci Odasi', 'pharmacists_chamber', 90, 'https://www.osmaniyeeczaciodasi.org.tr', true
-from provinces p
-where p.slug = 'osmaniye'
-on conflict (province_id, name) do update set
-  type = excluded.type,
-  authority_weight = excluded.authority_weight,
-  base_url = excluded.base_url,
-  enabled = true;
-
 insert into source_endpoints (
   source_id, district_id, endpoint_url, format, parser_key, is_primary, poll_cron, enabled
 )

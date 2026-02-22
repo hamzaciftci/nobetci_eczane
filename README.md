@@ -7,6 +7,10 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - API: NestJS + PostgreSQL + Redis
 - Ingestion: BullMQ worker (03:00 full sync + 10 dk il bazli validate + realtime override)
 
+## Runtime
+- Node.js `20.x` (Vercel API projesinde de 20.x secilmeli)
+- pnpm `10.27.0`
+
 ## Quick Start
 1. Kopya env dosyasi:
    - `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`)

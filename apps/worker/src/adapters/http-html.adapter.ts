@@ -4,6 +4,7 @@ import { load } from "cheerio";
 import { SourceAdapter } from "./adapter.interface";
 import { AdapterFetchResult, SourceBatch, SourceEndpointConfig, SourceRecord } from "../core/types";
 import { parseHtmlToSourceRecords } from "../parsers/html-parser";
+import { TURKIYE_DISTRICT_LEXICON } from "../parsers/tr-districts";
 import {
   OutdatedSourceDateError,
   ScrapedDateValidationResult,
@@ -37,6 +38,12 @@ export class HttpHtmlAdapter implements SourceAdapter {
     if (!records.length) {
       records = parseHtmlToSourceRecords(response.body, endpoint);
     }
+
+    if (shouldFetchDistrictForms(response.body, records)) {
+      const formRecords = await fetchDistrictFormRecords(endpoint, response.body, conditionalHeaders);
+      records = mergeSourceRecords(records, formRecords);
+    }
+
     if (!records.length && isAydinEndpoint(endpoint.endpointUrl)) {
       records = await fetchAydinPostRecords(endpoint, response.body, conditionalHeaders);
     }
@@ -44,6 +51,7 @@ export class HttpHtmlAdapter implements SourceAdapter {
       records = await fetchRelatedRecords(endpoint, response.body);
     }
 
+    records = normalizeSourceRecordDistricts(records, endpoint.provinceSlug);
     records = filterProvinceScopedRecords(endpoint.provinceSlug, records);
     if (!records.length) {
       throw new Error("Parser produced zero records");
@@ -436,6 +444,372 @@ async function fetchAydinPostRecords(
   return [...dedupe.values()];
 }
 
+function shouldFetchDistrictForms(baseHtml: string, records: SourceRecord[]): boolean {
+  if (!/<select[^>]+(?:name|id)=["'][^"']*ilce/i.test(baseHtml)) {
+    return false;
+  }
+
+  if (!records.length) {
+    return true;
+  }
+
+  const distinct = new Set(records.map((record) => record.districtSlug).filter(Boolean));
+  return distinct.size <= 1;
+}
+
+async function fetchDistrictFormRecords(
+  endpoint: SourceEndpointConfig,
+  baseHtml: string,
+  conditionalHeaders: Record<string, string> = {}
+): Promise<SourceRecord[]> {
+  const $ = load(baseHtml);
+  const form = $("form").filter((_, formEl) => $(formEl).find("select[name*='ilce'], select[id*='ilce']").length > 0).first();
+  if (!form.length) {
+    return [];
+  }
+
+  const select = form.find("select[name*='ilce'], select[id*='ilce']").first();
+  const selectName = cleanText(String(select.attr("name") ?? select.attr("id") ?? "ilce")) || "ilce";
+  const rawOptions = select
+    .find("option")
+    .map((_, option) => {
+      const value = cleanText(String($(option).attr("value") ?? ""));
+      const label = cleanText($(option).text()) || value;
+      return { value, label };
+    })
+    .get() as Array<{ value: string; label: string }>;
+
+  const optionEntries = [
+    ...new Map(
+      rawOptions
+        .filter((entry) => {
+          const label = entry.label.toLocaleLowerCase("tr-TR");
+          return Boolean(
+            entry.value &&
+              entry.value !== "0" &&
+              !label.includes("ilce seciniz") &&
+              !label.includes("ilçe seçiniz") &&
+              !label.includes("tum ilceler") &&
+              !label.includes("tüm ilçeler") &&
+              !label.includes("hepsi")
+          );
+        })
+        .map((entry) => [entry.value, entry] as const)
+    ).values()
+  ];
+
+  if (!optionEntries.length) {
+    return [];
+  }
+
+  const action = cleanText(String(form.attr("action") ?? ""));
+  const postUrl = toAbsoluteUrl(endpoint.endpointUrl, action || endpoint.endpointUrl) ?? endpoint.endpointUrl;
+  const hidden = readHiddenInputs($, form);
+  const dutyDate = resolveActiveDutyWindow().dutyDate;
+  const dutyDateTr = formatDutyDateForLegacyForms(dutyDate);
+  const parserCandidates = new Set<string>([endpoint.parserKey, "generic_auto_v1", "generic_list", "generic_table"]);
+  const maxDistrictRequests = Number(process.env.FORM_FETCH_MAX_DISTRICTS ?? 120);
+  const knownDistricts = getKnownDistricts(endpoint.provinceSlug);
+  const dedupe = new Map<string, SourceRecord>();
+
+  const pageResponse = await fetch(endpoint.endpointUrl, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      ...defaultHeaders(),
+      ...conditionalHeaders
+    }
+  });
+  const cookieHeader = extractCookieHeader(pageResponse.headers.get("set-cookie"));
+
+  for (const optionEntry of optionEntries.slice(0, maxDistrictRequests)) {
+    const districtValue = optionEntry.value;
+    const districtHint = pickCanonicalDistrictName(optionEntry.label, optionEntry.label, knownDistricts);
+    const payload = new URLSearchParams();
+    for (const [key, value] of Object.entries(hidden)) {
+      payload.set(key, value);
+    }
+    payload.set(selectName, districtValue);
+    injectDatePayload(payload, dutyDate, dutyDateTr);
+
+    try {
+      const response = await fetch(postUrl, {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          ...defaultHeaders(),
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          ...(cookieHeader ? { cookie: cookieHeader } : {})
+        },
+        body: payload
+      });
+      if (!response.ok) {
+        continue;
+      }
+
+      const body = await response.text();
+      if (!body || isPdfLike(body, postUrl)) {
+        continue;
+      }
+
+      const htmlPayloads = extractHtmlFromPayload(body);
+      const parsePayloads = htmlPayloads.length ? htmlPayloads : [body];
+
+      for (const htmlPayload of parsePayloads) {
+        for (const parserKey of parserCandidates) {
+          const records = withDistrictFallback(
+            parseHtmlToSourceRecords(htmlPayload, {
+              ...endpoint,
+              endpointUrl: postUrl,
+              parserKey
+            }),
+            districtHint,
+            knownDistricts
+          );
+
+          for (const record of records) {
+            const key = `${record.districtSlug}:${record.normalizedName}`;
+            if (!dedupe.has(key)) {
+              dedupe.set(key, record);
+            }
+          }
+
+          if (records.length) {
+            break;
+          }
+        }
+      }
+    } catch {
+      // keep partial district successes
+    }
+  }
+
+  return [...dedupe.values()];
+}
+
+function mergeSourceRecords(base: SourceRecord[], incoming: SourceRecord[]): SourceRecord[] {
+  if (!incoming.length) {
+    return base;
+  }
+
+  const map = new Map<string, SourceRecord>();
+  for (const record of [...base, ...incoming]) {
+    const key = `${record.districtSlug}:${record.normalizedName}`;
+    if (!map.has(key)) {
+      map.set(key, record);
+    }
+  }
+
+  return [...map.values()];
+}
+
+function normalizeSourceRecordDistricts(records: SourceRecord[], provinceSlug: string): SourceRecord[] {
+  const knownDistricts = getKnownDistricts(provinceSlug);
+  if (!knownDistricts.length || !records.length) {
+    return records;
+  }
+
+  return records.map((record) => {
+    const districtName = pickCanonicalDistrictName(
+      record.districtName,
+      `${record.districtName} ${record.pharmacyName} ${record.address}`,
+      knownDistricts
+    );
+
+    return {
+      ...record,
+      districtName,
+      districtSlug: toSlug(districtName)
+    };
+  });
+}
+
+function pickCanonicalDistrictName(current: string, text: string, knownDistricts: readonly string[]): string {
+  const cleaned = cleanText(current);
+  const currentSlug = toSlug(cleaned);
+  if (currentSlug) {
+    const exact = knownDistricts.find((item) => toSlug(item) === currentSlug);
+    if (exact) {
+      return exact;
+    }
+  }
+
+  const fromText = findDistrictFromText(text, knownDistricts);
+  if (fromText) {
+    return fromText;
+  }
+
+  if (isGenericDistrictName(cleaned)) {
+    return "Merkez";
+  }
+
+  if (isNoiseDistrictName(cleaned)) {
+    return "Merkez";
+  }
+
+  if (!isKnownDistrictName(cleaned, knownDistricts)) {
+    return "Merkez";
+  }
+
+  return cleaned;
+}
+
+function findDistrictFromText(text: string, knownDistricts: readonly string[]): string {
+  const normalizedText = toSlug(text);
+  if (!normalizedText) {
+    return "";
+  }
+
+  const tokens = normalizedText.split(/[^a-z0-9]+/).filter(Boolean);
+  const sorted = [...knownDistricts].sort((a, b) => toSlug(b).length - toSlug(a).length);
+  for (const district of sorted) {
+    const districtSlug = toSlug(district);
+    if (!districtSlug) {
+      continue;
+    }
+
+    if (districtSlug.length <= 3) {
+      if (tokens.includes(districtSlug)) {
+        return district;
+      }
+      continue;
+    }
+
+    if (
+      normalizedText === districtSlug ||
+      normalizedText.startsWith(`${districtSlug}-`) ||
+      normalizedText.endsWith(`-${districtSlug}`) ||
+      normalizedText.includes(`-${districtSlug}-`) ||
+      normalizedText.includes(districtSlug)
+    ) {
+      return district;
+    }
+  }
+
+  return "";
+}
+
+function isNoiseDistrictName(value: string): boolean {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = toSlug(value);
+  if (!normalized) {
+    return true;
+  }
+
+  if (
+    normalized.includes("nobetci") ||
+    normalized.includes("eczane") ||
+    normalized.includes("aile-sagligi") ||
+    normalized.includes("saglik-ocagi") ||
+    normalized.includes("hastane") ||
+    normalized.includes("tip-merkezi") ||
+    normalized.includes("asm") ||
+    normalized.includes("nolu")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function withDistrictFallback(
+  records: SourceRecord[],
+  districtHint: string,
+  knownDistricts: readonly string[]
+): SourceRecord[] {
+  if (!records.length) {
+    return records;
+  }
+
+  const canonicalHint = pickCanonicalDistrictName(districtHint, districtHint, knownDistricts);
+  if (!canonicalHint || isGenericDistrictName(canonicalHint)) {
+    return records;
+  }
+
+  return records.map((record) => {
+    const canonical = pickCanonicalDistrictName(
+      record.districtName,
+      `${record.districtName} ${record.pharmacyName} ${record.address}`,
+      knownDistricts
+    );
+
+    if (canonical && canonical !== "Merkez" && isKnownDistrictName(canonical, knownDistricts)) {
+      return {
+        ...record,
+        districtName: canonical,
+        districtSlug: toSlug(canonical)
+      };
+    }
+
+    return {
+      ...record,
+      districtName: canonicalHint,
+      districtSlug: toSlug(canonicalHint)
+    };
+  });
+}
+
+function isKnownDistrictName(value: string, knownDistricts: readonly string[]): boolean {
+  const slug = toSlug(value);
+  if (!slug) {
+    return false;
+  }
+
+  return knownDistricts.some((item) => toSlug(item) === slug);
+}
+
+function isGenericDistrictName(value: string): boolean {
+  const normalized = toSlug(value);
+  return !normalized || normalized === "merkez" || normalized === "merkez-ilce" || normalized === "merkez-ilcesi";
+}
+
+function getKnownDistricts(provinceSlug: string): string[] {
+  const base = TURKIYE_DISTRICT_LEXICON[provinceSlug] ?? [];
+  const extras = EXTRA_DISTRICT_ALIASES[provinceSlug] ?? [];
+  return [...new Set([...base, ...extras])];
+}
+
+function readHiddenInputs($: any, form: any) {
+  const values: Record<string, string> = {};
+  form.find("input[type='hidden'][name]").each((_index: number, input: any) => {
+    const key = cleanText(String($(input).attr("name") ?? ""));
+    const value = cleanText(String($(input).attr("value") ?? ""));
+    if (key) {
+      values[key] = value;
+    }
+  });
+  return values;
+}
+
+function injectDatePayload(payload: URLSearchParams, dutyDateIso: string, dutyDateTr: string) {
+  const dateKeys = ["tarih", "tarih1", "date", "selectedDate", "gun", "nobetTarihi"];
+  for (const key of dateKeys) {
+    if (!payload.has(key)) {
+      continue;
+    }
+
+    const current = cleanText(payload.get(key) ?? "");
+    if (!current) {
+      payload.set(key, dutyDateTr);
+      continue;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(current)) {
+      payload.set(key, dutyDateIso);
+      continue;
+    }
+
+    payload.set(key, dutyDateTr);
+  }
+
+  if (!payload.has("tarih")) {
+    payload.set("tarih", dutyDateTr);
+  }
+}
+
 function formatDutyDateForLegacyForms(dutyDate: string): string {
   const [year, month, day] = dutyDate.split("-");
   return `${day}.${month}.${year}`;
@@ -769,3 +1143,7 @@ function appendCacheBuster(url: string): string {
   parsed.searchParams.set("_ts", String(Date.now()));
   return parsed.toString();
 }
+
+const EXTRA_DISTRICT_ALIASES: Record<string, readonly string[]> = {
+  adana: ["Salbaş"]
+};

@@ -1,6 +1,7 @@
 import { normalizePharmacyName, resolveActiveDutyWindow, toSlug } from "@nobetci/shared";
 import { load, CheerioAPI } from "cheerio";
 import { SourceEndpointConfig, SourceRecord } from "../core/types";
+import { TURKIYE_DISTRICT_LEXICON } from "./tr-districts";
 
 interface ParsedRow {
   districtName: string;
@@ -16,7 +17,8 @@ type ParserFn = ($: CheerioAPI, endpoint: SourceEndpointConfig) => ParsedRow[];
 
 export function parseHtmlToSourceRecords(html: string, endpoint: SourceEndpointConfig): SourceRecord[] {
   const $ = load(html);
-  const rows = selectParser(endpoint.parserKey)($, endpoint);
+  const parsedRows = selectParser(endpoint.parserKey)($, endpoint);
+  const rows = normalizeDistrictRows(parsedRows, endpoint.provinceSlug);
   const now = new Date().toISOString();
   const { dutyDate } = resolveActiveDutyWindow();
 
@@ -1108,6 +1110,236 @@ function dedupeRows(items: ParsedRow[]): ParsedRow[] {
     }
   }
   return [...map.values()];
+}
+
+function normalizeDistrictRows(rows: ParsedRow[], provinceSlug: string): ParsedRow[] {
+  if (!rows.length) {
+    return rows;
+  }
+
+  const knownDistricts = collectKnownDistricts(rows, provinceSlug);
+
+  return rows.map((row) => {
+    const cleanedCurrent = sanitizeDistrictLabel(row.districtName, provinceSlug);
+    const districtFromAddress = sanitizeDistrictLabel(extractDistrictFromAddress(row.address) ?? "", provinceSlug);
+    const districtFromText = findDistrictFromKnownList(
+      `${row.districtName} ${row.pharmacyName} ${row.address}`,
+      knownDistricts
+    );
+
+    const districtName = pickBestDistrictName({
+      current: cleanedCurrent,
+      fromText: districtFromText,
+      fromAddress: districtFromAddress
+    });
+    const canonicalDistrict = canonicalizeDistrictName(
+      districtName,
+      `${row.districtName} ${row.pharmacyName} ${row.address}`,
+      knownDistricts
+    );
+
+    return {
+      ...row,
+      districtName: canonicalDistrict,
+      districtSlug: toSlug(canonicalDistrict)
+    };
+  });
+}
+
+function collectKnownDistricts(rows: ParsedRow[], provinceSlug: string): string[] {
+  const discovered = new Set<string>();
+  const add = (value: string) => {
+    const normalized = sanitizeDistrictLabel(value, provinceSlug);
+    if (!normalized || isGenericDistrictName(normalized) || isLikelyNoiseDistrict(normalized)) {
+      return;
+    }
+    discovered.add(normalized);
+  };
+
+  for (const row of rows) {
+    add(row.districtName);
+    add(extractDistrictFromAddress(row.address) ?? "");
+  }
+
+  for (const district of TURKIYE_DISTRICT_LEXICON[provinceSlug] ?? []) {
+    add(district);
+  }
+
+  if (provinceSlug === "adana") {
+    for (const district of ADANA_DISTRICTS) {
+      add(district);
+    }
+  }
+
+  return [...discovered];
+}
+
+function pickBestDistrictName(params: {
+  current: string;
+  fromText: string;
+  fromAddress: string;
+}): string {
+  const { current, fromText, fromAddress } = params;
+  const hasCurrentNoise = isLikelyNoiseDistrict(current);
+
+  if (fromText && (!current || isGenericDistrictName(current) || hasCurrentNoise)) {
+    return fromText;
+  }
+
+  if (fromAddress && (!current || isGenericDistrictName(current) || hasCurrentNoise)) {
+    return fromAddress;
+  }
+
+  if (current && !hasCurrentNoise) {
+    return current;
+  }
+
+  if (fromText) {
+    return fromText;
+  }
+
+  if (fromAddress) {
+    return fromAddress;
+  }
+
+  return "Merkez";
+}
+
+function sanitizeDistrictLabel(value: string, provinceSlug: string): string {
+  let cleaned = cleanText(value);
+  if (!cleaned) {
+    return "";
+  }
+
+  cleaned = cleaned
+    .replace(/(?:BUG[ÜU]N|BUGUN|YARIN|G[ÜU]N[ÜU])\s*/gi, "")
+    .replace(/N[ÖO]BET[ÇC][İI]\s*ECZANE(?:LER)?/gi, "")
+    .replace(/G[ÜU]NL[ÜU]K\s*/gi, "")
+    .replace(/HAFTALIK\s*/gi, "")
+    .replace(/\bN[ÖO]BET\s*KARTI\b/gi, "")
+    .replace(/\b[İI]L[ÇC]E(S[İI])?\b/gi, "")
+    .replace(/\bLISTES[İI]\b/gi, "")
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) {
+    return "";
+  }
+
+  const provinceToken = toSlug(provinceSlug);
+  const cleanedSlug = toSlug(cleaned);
+  if (cleanedSlug === provinceToken) {
+    return "Merkez";
+  }
+
+  return toTitleCaseTr(cleaned);
+}
+
+function findDistrictFromKnownList(text: string, knownDistricts: string[]): string {
+  const normalizedText = toSlug(text);
+  if (!normalizedText || !knownDistricts.length) {
+    return "";
+  }
+
+  const sorted = [...knownDistricts].sort((a, b) => toSlug(b).length - toSlug(a).length);
+  const tokens = normalizedText.split(/[^a-z0-9]+/).filter(Boolean);
+
+  for (const district of sorted) {
+    const districtSlug = toSlug(district);
+    if (!districtSlug) {
+      continue;
+    }
+
+    if (districtSlug.length <= 3) {
+      if (tokens.includes(districtSlug)) {
+        return district;
+      }
+      continue;
+    }
+
+    if (
+      normalizedText === districtSlug ||
+      normalizedText.startsWith(`${districtSlug}-`) ||
+      normalizedText.endsWith(`-${districtSlug}`) ||
+      normalizedText.includes(`-${districtSlug}-`) ||
+      normalizedText.includes(districtSlug)
+    ) {
+      return district;
+    }
+  }
+
+  return "";
+}
+
+function canonicalizeDistrictName(value: string, text: string, knownDistricts: string[]): string {
+  const cleaned = cleanText(value);
+  if (!cleaned) {
+    const fromText = findDistrictFromKnownList(text, knownDistricts);
+    return fromText || "Merkez";
+  }
+
+  const cleanedSlug = toSlug(cleaned);
+  const exact = knownDistricts.find((item) => toSlug(item) === cleanedSlug);
+  if (exact) {
+    return exact;
+  }
+
+  if (isLikelyNoiseDistrict(cleaned) || isGenericDistrictName(cleaned)) {
+    const fromText = findDistrictFromKnownList(text, knownDistricts);
+    if (fromText) {
+      return fromText;
+    }
+  }
+
+  return cleaned;
+}
+
+function isGenericDistrictName(value: string): boolean {
+  const normalized = toSlug(value);
+  return normalized === "merkez" || normalized === "merkez-ilce" || normalized === "merkez-ilcesi";
+}
+
+function isLikelyNoiseDistrict(value: string): boolean {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = toSlug(value);
+  if (!normalized) {
+    return true;
+  }
+
+  if (
+    normalized.includes("nobetci") ||
+    normalized.includes("eczane") ||
+    normalized.includes("bugun") ||
+    normalized.includes("yarin") ||
+    normalized.includes("aile-sagligi") ||
+    normalized.includes("saglik-ocagi") ||
+    normalized.includes("hastane") ||
+    normalized.includes("tip-merkezi") ||
+    normalized.includes("asm") ||
+    normalized.includes("nolu")
+  ) {
+    return true;
+  }
+
+  const hasLetter = /[a-zA-ZçğıöşüÇĞİÖŞÜ]/.test(value);
+  if (!hasLetter) {
+    return true;
+  }
+
+  return false;
+}
+
+function toTitleCaseTr(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toLocaleUpperCase("tr-TR")}${part.slice(1)}`)
+    .join(" ");
 }
 
 function normalizeOsmaniyeDistrict(value: string): string {

@@ -6,6 +6,7 @@ import { AdminTokenGuard } from "./admin-token.guard";
 
 @Module({
   controllers: [AdminController],
-  providers: [AdminService, RecoveryService, AdminTokenGuard]
+  providers: [AdminService, RecoveryService, AdminTokenGuard],
+  exports: [AdminTokenGuard]
 })
 export class AdminModule {}

@@ -3,7 +3,7 @@ name: Ingestion Cron
 on:
   schedule:
     - cron: "*/10 * * * *"
-    - cron: "5 0 * * *"
+    - cron: "0 3 * * *"
   workflow_dispatch:
     inputs:
       provinces:
@@ -47,7 +47,7 @@ jobs:
           ENABLE_TITCK_SECONDARY: ${{ vars.ENABLE_TITCK_SECONDARY || '0' }}
         run: pnpm sources:sync
 
-      - name: Run one-off ingestion
+      - name: Run ingestion job
         env:
           TZ: Europe/Istanbul
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -59,4 +59,9 @@ jobs:
           ENABLE_CONDITIONAL_FETCH: "0"
           STRICT_SCRAPED_DATE_KEYS: "osmaniye_eo_v1"
           LOG_LEVEL: info
-        run: pnpm ingest:once
+        run: |
+          if [ "${{ github.event.schedule }}" = "0 3 * * *" ]; then
+            pnpm hybrid:full-sync
+          else
+            pnpm ingest:once
+          fi

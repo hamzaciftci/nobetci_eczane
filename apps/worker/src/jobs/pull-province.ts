@@ -4,6 +4,7 @@ import { AdapterRegistry } from "../adapters/registry";
 import { checksumPayload } from "../adapters/http-html.adapter";
 import { crossCheck } from "../core/cross-check";
 import { getDefaultEndpoints } from "../core/default-endpoints";
+import { syncProvinceSnapshotFromDutyRecords } from "../core/hybrid-sync-repository";
 import { IngestionMetrics } from "../core/metrics";
 import { SourceRepository } from "../core/source-repository";
 import { ConflictItem, SourceBatch, SourceEndpointConfig, SourceMeta, VerifiedRecord } from "../core/types";
@@ -122,6 +123,14 @@ export async function pullProvinceAndPublish(
       await persistConflict(client, provinceId, conflict);
     }
 
+    const touchedDutyDates = [...new Set(checked.records.map((record) => record.dutyDate).filter(Boolean))];
+    const snapshotSummary = await syncProvinceSnapshotFromDutyRecords(
+      client,
+      data.provinceSlug,
+      touchedDutyDates,
+      logger
+    );
+
     await client.query("commit");
     metrics.markSuccess(data.provinceSlug, checked.conflicts.length);
     logger.info(
@@ -129,7 +138,8 @@ export async function pullProvinceAndPublish(
         province: data.provinceSlug,
         records: checked.records.length,
         conflicts: checked.conflicts.length,
-        degraded_count: checked.records.filter((r) => r.isDegraded).length
+        degraded_count: checked.records.filter((r) => r.isDegraded).length,
+        snapshot_summary: snapshotSummary
       },
       "Province pull committed"
     );
@@ -293,6 +303,17 @@ async function pullFromEndpointGroup(
           parser_key: endpoint.parserKey,
           error_message: errorMessage
         }
+      });
+      await repository.enqueueRetry({
+        provinceSlug,
+        sourceEndpointId: endpoint.sourceEndpointId,
+        reason: errorMessage,
+        payload: {
+          endpoint: endpoint.endpointUrl,
+          source_name: endpoint.sourceName,
+          role
+        },
+        delayMinutes: 5
       });
 
       logger.warn(

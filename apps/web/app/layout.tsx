@@ -18,6 +18,9 @@ const headingFont = DM_Serif_Display({
   variable: "--font-heading"
 });
 
+export const runtime = "nodejs";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Nobetci Eczane Platformu",
   description: "81 il icin kaynak seffafligi olan nobetci eczane platformu",

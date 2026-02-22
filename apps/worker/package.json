@@ -7,6 +7,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "ingest:once": "tsx src/cli/ingest-once.ts",
+    "hybrid:full-sync": "tsx src/cli/hybrid-full-sync.ts",
+    "hybrid:accuracy-report": "tsx src/cli/accuracy-report.ts",
     "lint": "echo \"worker lint placeholder\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

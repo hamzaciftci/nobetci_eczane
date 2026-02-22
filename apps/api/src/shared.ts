@@ -12,6 +12,7 @@ export interface DutyRecordDto {
   ilce: string;
   adres: string;
   telefon: string;
+  nobet_saatleri?: string | null;
   lat: number | null;
   lng: number | null;
   kaynak: string;

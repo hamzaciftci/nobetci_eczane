@@ -24,7 +24,7 @@ type RawDutyResponse = Partial<DutyResponse> & {
 
 export async function fetchProvinces(): Promise<ProvinceDto[]> {
   const response = await fetch(`${API_BASE_URL}/api/iller`, {
-    next: { revalidate: 86400, tags: ["provinces"] }
+    cache: "no-store"
   });
 
   if (!response.ok) {

@@ -3,9 +3,9 @@
 Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP iskeletidir.
 
 ## Stack
-- Web: Next.js App Router (ISR)
+- Web: Next.js App Router (Node runtime, revalidate=0)
 - API: NestJS + PostgreSQL + Redis
-- Ingestion: BullMQ worker (primer/sekonder adapter + cross-check)
+- Ingestion: BullMQ worker (03:00 full sync + 10 dk il bazli validate + realtime override)
 
 ## Quick Start
 1. Kopya env dosyasi:
@@ -27,6 +27,8 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
      - `REDIS_MODE=memory` (ya da `REDIS_URL`)
      - `CORS_ORIGIN=https://<web-domain>.vercel.app`
      - `ADMIN_API_TOKEN`
+     - `CRON_SECRET`
+     - `REALTIME_OVERRIDE_STALE_HOURS=6`
 3. Neon schema + migration:
    - `pnpm db:bootstrap`
 4. Web Vercel env:
@@ -34,8 +36,8 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 
 ## Otomatik Veri Guncelleme (GitHub Actions Cron)
 1. Bu repo'da `.github/workflows/ingestion-cron.yml`:
-   - her 10 dakikada bir (`*/10 * * * *`) validate/pull yapar.
-   - her gun 00:05'te (`5 0 * * *`) gun basi zorunlu refresh calistirir.
+  - her 10 dakikada bir (`*/10 * * * *`) validate/pull yapar.
+   - her gun 03:00'te (`0 3 * * *`) full sync calistirir.
    - her calismada `pnpm ingest:once` kullanir.
    - Workflow, ingestion oncesi `pnpm sources:sync` calistirarak endpoint listesini DB ile esitler.
 2. GitHub repository secret ekleyin:
@@ -80,6 +82,10 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - `GET /api/admin/ingestion/alerts/open`
 - `POST /api/admin/ingestion/alerts/{id}/resolve`
 - `POST /api/admin/ingestion/recovery/{il}/trigger`
+- `GET/POST /api/cron/full-sync` (`CRON_SECRET` gerekir)
+- `GET/POST /api/cron/validate-all` (`CRON_SECRET` gerekir)
+- `GET/POST /api/cron/validate/{il}` (`CRON_SECRET` gerekir)
+- `POST /api/realtime-override/{il}/refresh` (`x-admin-token` gerekir)
 - `GET /health/ready`
 - `GET /api/health/ready` (Vercel API route uyumlulugu)
 
@@ -107,5 +113,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - `pnpm test:manual-override`
 - `pnpm db:bootstrap`
 - `pnpm sources:sync`
+- `pnpm hybrid:full-sync`
+- `pnpm hybrid:accuracy-report`
 - `scripts/deploy-staging.ps1`
 - `scripts/deploy-production.ps1`

@@ -11,6 +11,7 @@ import { NearestModule } from "./modules/nearest/nearest.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { HealthModule } from "./modules/health/health.module";
 import { AdminModule } from "./modules/admin/admin.module";
+import { CronModule } from "./modules/cron/cron.module";
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { AdminModule } from "./modules/admin/admin.module";
     NearestModule,
     ReportsModule,
     HealthModule,
-    AdminModule
+    AdminModule,
+    CronModule
   ],
   providers: [
     {

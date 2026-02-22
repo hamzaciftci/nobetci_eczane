@@ -4,6 +4,7 @@ import { QueryResultRow } from "pg";
 import { ApiMetricsService } from "../../infra/api-metrics.service";
 import { DatabaseService } from "../../infra/database.service";
 import { RedisService } from "../../infra/redis.service";
+import { RealtimeOverrideService } from "./realtime-override.service";
 
 type DutyRow = QueryResultRow & {
   eczane_adi: string;
@@ -11,6 +12,7 @@ type DutyRow = QueryResultRow & {
   ilce: string;
   adres: string;
   telefon: string;
+  nobet_saatleri: string | null;
   lat: string | null;
   lng: string | null;
   kaynak: string;
@@ -49,7 +51,7 @@ type DutyResponse = {
   data: DutyRecordDto[];
 };
 
-const MAX_DUTY_TTL_SECONDS = 300;
+const MAX_DUTY_TTL_SECONDS = 600;
 const DUTY_TTL_SECONDS = resolveDutyTtl();
 const DUTY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -58,12 +60,14 @@ export class DutiesService {
   constructor(
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
-    private readonly apiMetrics: ApiMetricsService
+    private readonly apiMetrics: ApiMetricsService,
+    private readonly realtimeOverride: RealtimeOverrideService
   ) {}
 
   async byProvince(ilSlug: string, requestedDate?: string) {
     this.apiMetrics.trackEndpoint("/api/il/:il/nobetci");
     const dutyDate = this.resolveRequestedDutyDate(requestedDate);
+    await this.realtimeOverride.ensureProvinceFresh(ilSlug, dutyDate);
     const cacheKey = `api:duty:${ilSlug}:all:${dutyDate}`;
 
     const cached = await this.redis.getJson<DutyResponse>(cacheKey);
@@ -87,6 +91,7 @@ export class DutiesService {
   async byDistrict(ilSlug: string, ilceSlug: string, requestedDate?: string) {
     this.apiMetrics.trackEndpoint("/api/il/:il/:ilce/nobetci");
     const dutyDate = this.resolveRequestedDutyDate(requestedDate);
+    await this.realtimeOverride.ensureProvinceFresh(ilSlug, dutyDate);
     const cacheKey = `api:duty:${ilSlug}:${ilceSlug}:${dutyDate}`;
 
     const cached = await this.redis.getJson<DutyResponse>(cacheKey);
@@ -130,6 +135,9 @@ export class DutiesService {
         d.name as ilce,
         ph.address as adres,
         ph.phone as telefon,
+        to_char(dr.duty_start at time zone 'Europe/Istanbul', 'HH24:MI')
+          || '-' ||
+        to_char(dr.duty_end at time zone 'Europe/Istanbul', 'HH24:MI') as nobet_saatleri,
         ph.lat::text as lat,
         ph.lng::text as lng,
         string_agg(distinct s.name, ', ') as kaynak,
@@ -173,6 +181,9 @@ export class DutiesService {
         d.name as ilce,
         ph.address as adres,
         ph.phone as telefon,
+        to_char(dr.duty_start at time zone 'Europe/Istanbul', 'HH24:MI')
+          || '-' ||
+        to_char(dr.duty_end at time zone 'Europe/Istanbul', 'HH24:MI') as nobet_saatleri,
         ph.lat::text as lat,
         ph.lng::text as lng,
         string_agg(distinct s.name, ', ') as kaynak,
@@ -272,6 +283,7 @@ export class DutiesService {
       ilce: row.ilce,
       adres: row.adres,
       telefon: row.telefon,
+      nobet_saatleri: row.nobet_saatleri ?? null,
       lat: row.lat ? Number(row.lat) : null,
       lng: row.lng ? Number(row.lng) : null,
       kaynak: row.kaynak,

@@ -4,6 +4,7 @@ import { Queue, Worker } from "bullmq";
 import pino from "pino";
 import { Pool } from "pg";
 import { pullProvinceAndPublish } from "./jobs/pull-province";
+import { runHybridFullSync } from "./jobs/hybrid-full-sync";
 import { IngestionMetrics } from "./core/metrics";
 
 ensureIstanbulTimezone();
@@ -35,6 +36,11 @@ const queue = new Queue(queueName, { connection });
 const worker = new Worker(
   queueName,
   async (job) => {
+    if (job.name === "hybrid-full-sync") {
+      await runHybridFullSync(db, logger, metrics);
+      return;
+    }
+
     const provinceSlug = String(job.data.provinceSlug ?? "");
     await pullProvinceAndPublish({ provinceSlug }, db, logger, metrics);
   },
@@ -60,6 +66,24 @@ async function bootstrap() {
 }
 
 async function scheduleRecurringJobs(provinces: string[]) {
+  await queue.add(
+    "hybrid-full-sync",
+    {},
+    {
+      jobId: "hybrid-full-sync:daily",
+      repeat: {
+        pattern: "0 3 * * *"
+      },
+      attempts: 3,
+      backoff: {
+        type: "exponential",
+        delay: 30_000
+      },
+      removeOnComplete: 50,
+      removeOnFail: 200
+    }
+  );
+
   for (const provinceSlug of provinces) {
     await queue.add(
       "pull-province-validate",
@@ -68,24 +92,6 @@ async function scheduleRecurringJobs(provinces: string[]) {
         jobId: `pull-validate:${provinceSlug}`,
         repeat: {
           pattern: "*/10 * * * *"
-        },
-        attempts: 5,
-        backoff: {
-          type: "exponential",
-          delay: 10_000
-        },
-        removeOnComplete: 5000,
-        removeOnFail: 10000
-      }
-    );
-
-    await queue.add(
-      "pull-province-daily",
-      { provinceSlug },
-      {
-        jobId: `pull-daily:${provinceSlug}`,
-        repeat: {
-          pattern: "5 0 * * *"
         },
         attempts: 5,
         backoff: {

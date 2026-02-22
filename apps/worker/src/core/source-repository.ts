@@ -249,4 +249,50 @@ export class SourceRepository {
       return false;
     }
   }
+
+  async enqueueRetry(params: {
+    provinceSlug: string;
+    sourceEndpointId?: number;
+    reason: string;
+    payload?: unknown;
+    delayMinutes?: number;
+  }): Promise<void> {
+    try {
+      await this.db.query(
+        `
+        insert into ingestion_retry_queue (
+          province_slug,
+          source_endpoint_id,
+          reason,
+          payload,
+          retry_count,
+          next_retry_at,
+          status,
+          created_at,
+          updated_at
+        )
+        values (
+          $1,
+          $2,
+          $3,
+          $4::jsonb,
+          0,
+          now() + make_interval(mins => $5),
+          'pending',
+          now(),
+          now()
+        )
+        `,
+        [
+          params.provinceSlug,
+          params.sourceEndpointId && params.sourceEndpointId > 0 ? params.sourceEndpointId : null,
+          params.reason,
+          JSON.stringify(params.payload ?? {}),
+          Math.max(1, params.delayMinutes ?? 5)
+        ]
+      );
+    } catch {
+      // Retry queue table may not exist yet in old databases.
+    }
+  }
 }

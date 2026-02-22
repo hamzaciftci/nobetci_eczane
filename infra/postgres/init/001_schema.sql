@@ -175,15 +175,7 @@ join provinces pr on pr.id = dr.province_id
 join districts d on d.id = dr.district_id
 join duty_evidence de on de.duty_record_id = dr.id
 join sources s on s.id = de.source_id
-where dr.duty_date = (
-  case
-    when extract(hour from now() at time zone 'Europe/Istanbul') < 8
-      then ((now() at time zone 'Europe/Istanbul') - interval '1 day')::date
-    else (now() at time zone 'Europe/Istanbul')::date
-  end
-)
-and dr.duty_start <= now()
-and dr.duty_end > now()
+where dr.duty_date = (now() at time zone 'Europe/Istanbul')::date
 group by
   dr.id,
   ph.canonical_name,

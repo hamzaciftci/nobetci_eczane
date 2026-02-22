@@ -244,13 +244,6 @@ function resolveAcceptedDates(now = DateTime.now().setZone(ISTANBUL_TZ)): string
     return [];
   }
 
-  if (now.hour < 8) {
-    const yesterday = now.minus({ days: 1 }).toISODate();
-    if (yesterday) {
-      return [today, yesterday];
-    }
-  }
-
   return [today];
 }
 

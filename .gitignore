@@ -14,3 +14,4 @@ apps/*/.next
 apps/*/dist
 .vercel
 .env*.local
+reports/comparison-*.json

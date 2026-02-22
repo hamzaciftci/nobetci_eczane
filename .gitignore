@@ -15,3 +15,5 @@ apps/*/dist
 .vercel
 .env*.local
 reports/comparison-*.json
+reports/verify-live-*.json
+reports/accuracy-report-*.json

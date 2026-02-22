@@ -16,6 +16,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --filter @nobetci/shared build && pnpm -r --filter \"!@nobetci/shared\" typecheck",
     "smoke": "node scripts/smoke.mjs",
+    "verify:live": "node scripts/verify-live-cron-worker.mjs",
     "compare:accuracy": "pnpm --filter @nobetci/worker exec node scripts/compare-duty-accuracy.mjs",
     "test:manual-override": "pnpm --filter @nobetci/api test:manual-override",
     "db:up": "docker compose up -d postgres redis",

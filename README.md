@@ -110,6 +110,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 
 ## Utility Scripts
 - `pnpm smoke`
+- `pnpm verify:live`
 - `pnpm test:manual-override`
 - `pnpm db:bootstrap`
 - `pnpm sources:sync`
@@ -117,3 +118,14 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - `pnpm hybrid:accuracy-report`
 - `scripts/deploy-staging.ps1`
 - `scripts/deploy-production.ps1`
+
+## Canli Cron + Worker E2E
+Canli API + Web + cron tetik + realtime override + DB probe icin:
+
+`VERIFY_API_BASE_URL=https://nobetci-eczane-api-ten.vercel.app VERIFY_WEB_BASE_URL=https://nobetci-eczane-tau.vercel.app pnpm verify:live`
+
+Opsiyonel env:
+- `CRON_SECRET` (cron endpoint korumaliysa)
+- `ADMIN_API_TOKEN` (realtime override endpointi icin)
+- `DATABASE_URL` (canli DB probe icin)
+- `VERIFY_PROVINCE=osmaniye`

@@ -1,6 +1,6 @@
 {
-  "installCommand": "if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-frozen-lockfile; fi",
-  "buildCommand": "pnpm build",
+  "installCommand": "echo \"install handled in buildCommand\"",
+  "buildCommand": "pnpm install --frozen-lockfile --prod=false || pnpm install --no-frozen-lockfile --prod=false; pnpm build",
   "outputDirectory": ".",
   "functions": {
     "api/[...route].ts": {

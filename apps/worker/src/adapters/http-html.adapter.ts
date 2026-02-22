@@ -4,6 +4,11 @@ import { load } from "cheerio";
 import { SourceAdapter } from "./adapter.interface";
 import { AdapterFetchResult, SourceBatch, SourceEndpointConfig, SourceRecord } from "../core/types";
 import { parseHtmlToSourceRecords } from "../parsers/html-parser";
+import {
+  OutdatedSourceDateError,
+  ScrapedDateValidationResult,
+  validateScrapedDate
+} from "../parsers/date-validation";
 
 interface FetchResult {
   statusCode: number;
@@ -25,14 +30,8 @@ export class HttpHtmlAdapter implements SourceAdapter {
       return fetchIstanbulNobetData(endpoint, conditionalHeaders);
     }
 
-    let response = await fetchEndpoint(endpoint.endpointUrl, conditionalHeaders);
-    if (response.statusCode === 304) {
-      // Some upstream APIs return 304 aggressively; retry without conditional headers to avoid empty ingestion runs.
-      response = await fetchEndpoint(endpoint.endpointUrl);
-    }
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw new Error(`Source responded with status ${response.statusCode}`);
-    }
+    const freshness = await fetchFreshPayload(endpoint, conditionalHeaders);
+    const { response, dateValidation, fetchUrl } = freshness;
 
     let records = parseJsonToSourceRecords(response.body, endpoint);
     if (!records.length) {
@@ -67,9 +66,60 @@ export class HttpHtmlAdapter implements SourceAdapter {
       httpStatus: response.statusCode,
       etag: response.etag,
       lastModified: response.lastModified,
-      rawPayload: response.body
+      rawPayload: response.body,
+      dateValidation,
+      fetchUrl
     };
   }
+}
+
+async function fetchFreshPayload(
+  endpoint: SourceEndpointConfig,
+  conditionalHeaders: Record<string, string>
+): Promise<{ response: FetchResult; dateValidation?: ScrapedDateValidationResult; fetchUrl: string }> {
+  let response = await fetchEndpoint(endpoint.endpointUrl, conditionalHeaders);
+  if (response.statusCode === 304) {
+    // Some upstream APIs return 304 aggressively; retry without conditional headers to avoid stale runs.
+    response = await fetchEndpoint(endpoint.endpointUrl);
+  }
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw new Error(`Source responded with status ${response.statusCode}`);
+  }
+
+  if (!isHtmlFormat(endpoint.format)) {
+    return {
+      response,
+      fetchUrl: endpoint.endpointUrl
+    };
+  }
+
+  let validation = validateScrapedDate(response.body, endpoint);
+  if (validation.isValid) {
+    return {
+      response,
+      dateValidation: validation,
+      fetchUrl: endpoint.endpointUrl
+    };
+  }
+
+  const retryUrl = appendCacheBuster(endpoint.endpointUrl);
+  const retried = await fetchEndpoint(retryUrl);
+  if (retried.statusCode < 200 || retried.statusCode >= 300) {
+    throw new Error(
+      `Source date mismatch and retry failed with status ${retried.statusCode} (expected ${validation.expectedDate}, scraped ${validation.scrapedDate ?? "n/a"})`
+    );
+  }
+
+  validation = validateScrapedDate(retried.body, endpoint);
+  if (!validation.isValid) {
+    throw new OutdatedSourceDateError(endpoint, validation);
+  }
+
+  return {
+    response: retried,
+    dateValidation: validation,
+    fetchUrl: retryUrl
+  };
 }
 
 async function fetchIstanbulNobetData(
@@ -78,6 +128,7 @@ async function fetchIstanbulNobetData(
 ): Promise<AdapterFetchResult> {
   const page = await fetch(endpoint.endpointUrl, {
     method: "GET",
+    cache: "no-store",
     headers: {
       ...defaultHeaders(),
       ...conditionalHeaders
@@ -153,6 +204,7 @@ async function fetchIstanbulNobetData(
     httpStatus: page.status,
     etag: page.headers.get("etag"),
     lastModified: page.headers.get("last-modified"),
+    fetchUrl: endpoint.endpointUrl,
     rawPayload: JSON.stringify({
       source: endpoint.endpointUrl,
       district_count: districts.length,
@@ -168,6 +220,7 @@ async function postIstanbulForm(
 ): Promise<unknown> {
   const response = await fetch(postUrl, {
     method: "POST",
+    cache: "no-store",
     headers: {
       ...defaultHeaders(),
       "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -323,6 +376,7 @@ async function fetchAydinPostRecords(
 
   const pageResponse = await fetch(endpoint.endpointUrl, {
     method: "GET",
+    cache: "no-store",
     headers: {
       ...defaultHeaders(),
       ...conditionalHeaders
@@ -338,6 +392,7 @@ async function fetchAydinPostRecords(
     try {
       const response = await fetch(postUrl, {
         method: "POST",
+        cache: "no-store",
         headers: {
           ...defaultHeaders(),
           "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -666,7 +721,9 @@ function defaultHeaders(): Record<string, string> {
   return {
     "user-agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "accept-language": "tr-TR,tr;q=0.9,en;q=0.8"
+    "accept-language": "tr-TR,tr;q=0.9,en;q=0.8",
+    pragma: "no-cache",
+    "cache-control": "no-cache, no-store, max-age=0"
   };
 }
 
@@ -680,6 +737,7 @@ export async function fetchEndpoint(
   try {
     const response = await fetch(endpointUrl, {
       method: "GET",
+      cache: "no-store",
       headers: {
         ...defaultHeaders(),
         ...headers
@@ -700,4 +758,14 @@ export async function fetchEndpoint(
 
 export function checksumPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function isHtmlFormat(format: SourceEndpointConfig["format"]): boolean {
+  return format === "html" || format === "html_js" || format === "html_table";
+}
+
+function appendCacheBuster(url: string): string {
+  const parsed = new URL(url);
+  parsed.searchParams.set("_ts", String(Date.now()));
+  return parsed.toString();
 }

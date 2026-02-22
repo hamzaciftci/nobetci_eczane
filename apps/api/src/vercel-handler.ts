@@ -2,6 +2,10 @@ import "reflect-metadata";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createNestApp } from "./bootstrap";
 
+if (!process.env.TZ || !process.env.TZ.trim()) {
+  process.env.TZ = "Europe/Istanbul";
+}
+
 type ExpressLikeHandler = (req: VercelRequest, res: VercelResponse) => void;
 let cachedHandler: ExpressLikeHandler | undefined;
 

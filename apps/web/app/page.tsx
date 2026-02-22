@@ -3,7 +3,7 @@ import { fetchProvinces } from "../lib/api";
 import { buildDailyDutyTitle, formatIstanbulDateWithWeekday } from "../lib/date";
 import { HomeCitySelector } from "../components/home-city-selector";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

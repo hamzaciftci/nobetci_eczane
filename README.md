@@ -33,7 +33,10 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
    - `NEXT_PUBLIC_API_BASE_URL=https://<api-domain>.vercel.app`
 
 ## Otomatik Veri Guncelleme (GitHub Actions Cron)
-1. Bu repo'da `.github/workflows/ingestion-cron.yml` her saat basi (`0 * * * *`) `pnpm ingest:once` calistirir.
+1. Bu repo'da `.github/workflows/ingestion-cron.yml`:
+   - her 10 dakikada bir (`*/10 * * * *`) validate/pull yapar.
+   - her gun 00:05'te (`5 0 * * *`) gun basi zorunlu refresh calistirir.
+   - her calismada `pnpm ingest:once` kullanir.
    - Workflow, ingestion oncesi `pnpm sources:sync` calistirarak endpoint listesini DB ile esitler.
 2. GitHub repository secret ekleyin:
    - `DATABASE_URL` (Neon pooled URL, `sslmode=require`)
@@ -88,6 +91,8 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - Worker, `source_endpoints` tablosunda aktif olan primer/sekonder kaynaklari kullanir.
 - `PROVINCE_SLUGS=all` iken worker sadece DB'de aktif kaynagi olan illeri otomatik yukler.
 - Static fallback varsayilan olarak kapalidir (`ALLOW_STATIC_FALLBACK=0`); acil durumda bilincli olarak acilabilir.
+- Production'da static fallback zorla kapatilir; sistem sahte/static eczane listesi yayinlamaz.
+- API endpointleri `Cache-Control: no-store` ile doner; CDN/server cache kaynakli stale cevap engellenir.
 - `source_endpoints` bos ise worker dahili pilot endpoint konfigu ile calismayi surdurur.
 - Web sayfalarinda OSM + Leaflet harita ve tamamen client-side "en yakin" modulu aktif.
 - `ADMIN_API_TOKEN` tanimliysa admin endpointlerinde `x-admin-token` gerekir.

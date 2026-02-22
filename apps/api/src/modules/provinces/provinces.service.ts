@@ -5,7 +5,7 @@ import { DatabaseService } from "../../infra/database.service";
 import { RedisService } from "../../infra/redis.service";
 
 const PROVINCES_CACHE_KEY = "api:iller";
-const PROVINCES_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const PROVINCES_CACHE_TTL_SECONDS = 5 * 60;
 
 @Injectable()
 export class ProvincesService {

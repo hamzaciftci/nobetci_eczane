@@ -2,7 +2,8 @@ name: Ingestion Cron
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/10 * * * *"
+    - cron: "5 0 * * *"
   workflow_dispatch:
     inputs:
       provinces:
@@ -48,11 +49,14 @@ jobs:
 
       - name: Run one-off ingestion
         env:
+          TZ: Europe/Istanbul
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           APP_DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DB_SSL_MODE: require
           INGESTION_PROVINCES: ${{ github.event.inputs.provinces || vars.INGESTION_PROVINCES || 'all' }}
           ALLOW_STATIC_FALLBACK: "0"
           ALLOW_FALLBACK_FOR_SECONDARY: "0"
+          ENABLE_CONDITIONAL_FETCH: "0"
+          STRICT_SCRAPED_DATE_KEYS: "osmaniye_eo_v1"
           LOG_LEVEL: info
         run: pnpm ingest:once

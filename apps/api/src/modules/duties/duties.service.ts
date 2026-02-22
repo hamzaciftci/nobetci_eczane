@@ -43,7 +43,8 @@ type DutyResponse = {
   data: DutyRecordDto[];
 };
 
-const DUTY_TTL_SECONDS = 120;
+const MAX_DUTY_TTL_SECONDS = 300;
+const DUTY_TTL_SECONDS = resolveDutyTtl();
 
 @Injectable()
 export class DutiesService {
@@ -249,4 +250,12 @@ function parseFloatOrNull(value: string | null): number | null {
   }
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resolveDutyTtl(): number {
+  const configured = Number(process.env.DUTY_CACHE_TTL_SECONDS ?? MAX_DUTY_TTL_SECONDS);
+  if (!Number.isFinite(configured) || configured <= 0) {
+    return MAX_DUTY_TTL_SECONDS;
+  }
+  return Math.min(Math.round(configured), MAX_DUTY_TTL_SECONDS);
 }

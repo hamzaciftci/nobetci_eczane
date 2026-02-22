@@ -19,6 +19,7 @@
   - `RATE_LIMIT_TTL`
   - `RATE_LIMIT_LIMIT`
   - `DB_POOL_MAX=1` (serverless icin onerilir)
+  - `DUTY_CACHE_TTL_SECONDS=300`
 - DB bootstrap:
   - `pnpm db:bootstrap`
   - Script once-off calisir, init/migration SQL dosyalarini uygular.
@@ -34,10 +35,14 @@
   - `PROVINCE_SLUGS`
   - `ALLOW_STATIC_FALLBACK` (`0` onerilir)
   - `ALLOW_FALLBACK_FOR_SECONDARY`
+  - `ENABLE_CONDITIONAL_FETCH=0`
+  - `STRICT_SCRAPED_DATE_KEYS` (onerilen: `osmaniye_eo_v1`)
 
 ## Worker Alternative (GitHub Actions Cron)
 - Workflow: `.github/workflows/ingestion-cron.yml`
-- Schedule: her saat basi (`0 * * * *`)
+- Schedule:
+  - her 10 dakikada bir (`*/10 * * * *`)
+  - her gun 00:05 (`5 0 * * *`)
 - Required secret:
   - `DATABASE_URL`
 - Optional variable:

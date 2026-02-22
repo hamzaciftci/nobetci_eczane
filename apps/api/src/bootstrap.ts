@@ -26,6 +26,16 @@ export async function createNestApp() {
 
   const express = app.getHttpAdapter().getInstance();
   express.disable("x-powered-by");
+  express.use((req: { path?: string }, res: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    const path = req.path ?? "";
+    if (path === "/api" || path.startsWith("/api/")) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Surrogate-Control", "no-store");
+    }
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { IngestionMetrics } from "../core/metrics";
 import { pullProvinceAndPublish } from "../jobs/pull-province";
 
+ensureIstanbulTimezone();
 loadDotenv({ path: join(process.cwd(), ".env"), override: false });
 loadDotenv({ path: join(process.cwd(), "../../.env"), override: false });
 
@@ -116,6 +117,12 @@ function envValue(value: string | undefined): string | undefined {
 
   const cleaned = value.replace(/^\uFEFF/, "").trim();
   return cleaned.length ? cleaned : undefined;
+}
+
+function ensureIstanbulTimezone() {
+  if (!process.env.TZ || !process.env.TZ.trim()) {
+    process.env.TZ = "Europe/Istanbul";
+  }
 }
 
 main().catch((error) => {

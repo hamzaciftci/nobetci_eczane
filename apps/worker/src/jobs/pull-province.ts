@@ -157,17 +157,77 @@ async function pullFromEndpointGroup(
   for (const endpoint of endpoints) {
     const startedAt = new Date();
     try {
-      const lastHeaders = await repository.getLatestHeaders(endpoint.sourceEndpointId);
       const conditionalHeaders: Record<string, string> = {};
-      if (lastHeaders.etag) {
-        conditionalHeaders["If-None-Match"] = lastHeaders.etag;
+      if (shouldUseConditionalFetch()) {
+        const lastHeaders = await repository.getLatestHeaders(endpoint.sourceEndpointId);
+        if (lastHeaders.etag) {
+          conditionalHeaders["If-None-Match"] = lastHeaders.etag;
+        }
+        if (lastHeaders.lastModified) {
+          conditionalHeaders["If-Modified-Since"] = lastHeaders.lastModified;
+        }
       }
-      if (lastHeaders.lastModified) {
-        conditionalHeaders["If-Modified-Since"] = lastHeaders.lastModified;
-      }
+
+      logger.info(
+        {
+          province: provinceSlug,
+          role,
+          sourceEndpointId: endpoint.sourceEndpointId,
+          sourceName: endpoint.sourceName,
+          endpoint: endpoint.endpointUrl
+        },
+        "[INFO] Fetch started"
+      );
 
       const adapter = registry.resolve(endpoint);
       const result = await adapter.fetch(endpoint, conditionalHeaders);
+
+      if (result.dateValidation) {
+        logger.info(
+          {
+            province: provinceSlug,
+            role,
+            sourceEndpointId: endpoint.sourceEndpointId,
+            scraped_date: result.dateValidation.scrapedDate,
+            today_date: result.dateValidation.expectedDate,
+            accepted_dates: result.dateValidation.acceptedDates,
+            date_status: result.dateValidation.status,
+            strict: result.dateValidation.strict,
+            source: result.dateValidation.source
+          },
+          "[INFO] Scraped date validation"
+        );
+
+        if (result.dateValidation.status === "outdated") {
+          logger.warn(
+            {
+              province: provinceSlug,
+              sourceEndpointId: endpoint.sourceEndpointId,
+              scraped_date: result.dateValidation.scrapedDate,
+              today_date: result.dateValidation.expectedDate,
+              accepted_dates: result.dateValidation.acceptedDates
+            },
+            "[WARNING] Outdated data detected"
+          );
+        } else if (result.dateValidation.status === "missing") {
+          logger.warn(
+            {
+              province: provinceSlug,
+              sourceEndpointId: endpoint.sourceEndpointId,
+              strict: result.dateValidation.strict
+            },
+            "[WARNING] Scraped date missing in source payload"
+          );
+        } else if (result.dateValidation.status === "valid") {
+          logger.info(
+            {
+              province: provinceSlug,
+              sourceEndpointId: endpoint.sourceEndpointId
+            },
+            "[OK] Data valid"
+          );
+        }
+      }
 
       await repository.insertRun({
         sourceEndpointId: endpoint.sourceEndpointId,
@@ -191,7 +251,7 @@ async function pullFromEndpointGroup(
       if (result.rawPayload) {
         await repository.insertSnapshot({
           sourceEndpointId: endpoint.sourceEndpointId,
-          sourceUrl: endpoint.endpointUrl,
+          sourceUrl: result.fetchUrl ?? endpoint.endpointUrl,
           payload: result.rawPayload,
           checksum: checksumPayload(result.rawPayload)
         });
@@ -222,9 +282,11 @@ async function pullFromEndpointGroup(
       await repository.insertAlert({
         provinceSlug,
         sourceEndpointId: endpoint.sourceEndpointId,
-        alertType: "adapter_failed",
+        alertType: errorMessage.includes("Source date validation failed") ? "outdated_source_data" : "adapter_failed",
         severity: role === "primary" ? "critical" : "warning",
-        message: `Adapter failed for ${role} source`,
+        message: errorMessage.includes("Source date validation failed")
+          ? `Outdated source date detected for ${role} source`
+          : `Adapter failed for ${role} source`,
         payload: {
           source_name: endpoint.sourceName,
           endpoint: endpoint.endpointUrl,
@@ -345,7 +407,16 @@ function shouldUseFallback(role: "primary" | "secondary"): boolean {
   if (process.env.ALLOW_STATIC_FALLBACK !== "1") {
     return false;
   }
+
+  // Hard safety: never allow static fallback in production.
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
   return role === "primary" || process.env.ALLOW_FALLBACK_FOR_SECONDARY === "1";
+}
+
+function shouldUseConditionalFetch(): boolean {
+  return process.env.ENABLE_CONDITIONAL_FETCH === "1";
 }
 
 async function getProvinceId(client: PoolClient, slug: string): Promise<number | null> {

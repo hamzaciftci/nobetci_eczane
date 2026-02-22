@@ -6,6 +6,7 @@ import { Pool } from "pg";
 import { pullProvinceAndPublish } from "./jobs/pull-province";
 import { IngestionMetrics } from "./core/metrics";
 
+ensureIstanbulTimezone();
 loadDotenv({ path: join(process.cwd(), ".env"), override: false });
 loadDotenv({ path: join(process.cwd(), "../../.env"), override: false });
 
@@ -61,12 +62,30 @@ async function bootstrap() {
 async function scheduleRecurringJobs(provinces: string[]) {
   for (const provinceSlug of provinces) {
     await queue.add(
-      "pull-province",
+      "pull-province-validate",
       { provinceSlug },
       {
-        jobId: `pull:${provinceSlug}`,
+        jobId: `pull-validate:${provinceSlug}`,
         repeat: {
-          pattern: "0 * * * *"
+          pattern: "*/10 * * * *"
+        },
+        attempts: 5,
+        backoff: {
+          type: "exponential",
+          delay: 10_000
+        },
+        removeOnComplete: 5000,
+        removeOnFail: 10000
+      }
+    );
+
+    await queue.add(
+      "pull-province-daily",
+      { provinceSlug },
+      {
+        jobId: `pull-daily:${provinceSlug}`,
+        repeat: {
+          pattern: "5 0 * * *"
         },
         attempts: 5,
         backoff: {
@@ -158,6 +177,12 @@ function envValue(value: string | undefined): string | undefined {
 
   const cleaned = value.replace(/^\uFEFF/, "").trim();
   return cleaned.length ? cleaned : undefined;
+}
+
+function ensureIstanbulTimezone() {
+  if (!process.env.TZ || !process.env.TZ.trim()) {
+    process.env.TZ = "Europe/Istanbul";
+  }
 }
 
 process.on("SIGINT", shutdown);

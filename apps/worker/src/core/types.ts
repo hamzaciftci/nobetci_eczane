@@ -80,4 +80,14 @@ export interface AdapterFetchResult {
   etag?: string | null;
   lastModified?: string | null;
   rawPayload?: string;
+  dateValidation?: {
+    expectedDate: string;
+    acceptedDates: string[];
+    scrapedDate: string | null;
+    status: "valid" | "missing" | "outdated";
+    isValid: boolean;
+    strict: boolean;
+    source: string;
+  };
+  fetchUrl?: string;
 }

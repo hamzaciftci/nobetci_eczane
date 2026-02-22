@@ -2,6 +2,10 @@ import "reflect-metadata";
 import { createNestApp } from "./bootstrap";
 import { envValue } from "./infra/env.util";
 
+if (!process.env.TZ || !process.env.TZ.trim()) {
+  process.env.TZ = "Europe/Istanbul";
+}
+
 async function bootstrap() {
   const app = await createNestApp();
 

@@ -242,7 +242,16 @@ function parseAdanaEczaciOdasiRows($: CheerioAPI): ParsedRow[] {
 
     const mapHref = card.find("a[href*='google.com/maps']").first().attr("href");
     const coords = extractCoordinates(mapHref);
-    const districtName = detectAdanaDistrict($, cardEl) ?? "Seyhan";
+    const districtFromHeading = detectAdanaDistrict($, cardEl);
+    const districtFromText = detectAdanaDistrictFromText(
+      `${districtFromHeading ?? ""} ${pharmacyName} ${address}`
+    );
+    const districtName =
+      districtFromText ??
+      districtFromHeading ??
+      detectAdanaDistrictFromText(`${pharmacyName} ${address}`) ??
+      inferAdanaDistrictByCoordinates(coords?.lat ?? null, coords?.lng ?? null) ??
+      "Seyhan";
 
     rows.push({
       districtName,
@@ -255,7 +264,7 @@ function parseAdanaEczaciOdasiRows($: CheerioAPI): ParsedRow[] {
     });
   });
 
-  return refineRowsByDistrictDictionary(dedupeRows(rows), ADANA_DISTRICTS, "Seyhan");
+  return dedupeRows(rows);
 }
 
 function parseAdanaAsmTableRows($: CheerioAPI): ParsedRow[] {
@@ -789,7 +798,7 @@ function extractDistrictFromHeading(value: string): string | null {
     return null;
   }
 
-  const match = cleaned.match(/([A-Za-zÇĞİÖŞÜçğıöşü\s]+)\s+N[öo]bet[cç]i Eczaneler/i);
+  const match = cleaned.match(/([A-Za-zÇĞİÖŞÜçğıöşü\s]+?)\s+(?:BUG[ÜU]N\s+)?N[öo]bet[cç]i Eczaneler/i);
   if (!match?.[1]) {
     return null;
   }
@@ -858,7 +867,12 @@ function detectDistrictName($: CheerioAPI, table: any): string | null {
   if (!cleaned) {
     return null;
   }
-  return cleaned.replace(/nobetci eczane(ler)?/gi, "").trim() || null;
+  return (
+    cleaned
+      .replace(/(?:BUG[ÜU]N\s+)?N[öo]bet[cç]i\s+Eczane(ler)?/gi, "")
+      .replace(/N[öo]bet[cç]i\s+Eczaneler/gi, "")
+      .trim() || null
+  );
 }
 
 function detectDistrictFromAncestors($: CheerioAPI, node: any): string | null {
@@ -867,16 +881,67 @@ function detectDistrictFromAncestors($: CheerioAPI, node: any): string | null {
   if (!cleaned) {
     return null;
   }
-  return cleaned.replace(/nobetci eczane(ler)?/gi, "").trim() || null;
+  return (
+    cleaned
+      .replace(/(?:BUG[ÜU]N\s+)?N[öo]bet[cç]i\s+Eczane(ler)?/gi, "")
+      .replace(/N[öo]bet[cç]i\s+Eczaneler/gi, "")
+      .trim() || null
+  );
 }
 
 function detectAdanaDistrict($: CheerioAPI, node: any): string | null {
-  const heading = $(node).prevAll("h1,h2,h3,h4,strong,.main-color").first().text();
-  const cleaned = cleanText(heading);
-  if (!cleaned) {
-    return null;
+  const districtSection = $(node).closest("div.col-md-6").parent("div.col-md-12");
+  const sectionHeading = cleanText(districtSection.children("h4").first().text());
+  if (sectionHeading) {
+    const fromSectionHint = detectAdanaDistrictFromText(sectionHeading);
+    if (fromSectionHint) {
+      return fromSectionHint;
+    }
+
+    const extractedFromSection = extractDistrictFromHeading(sectionHeading);
+    if (extractedFromSection) {
+      return normalizeDistrictLabel(extractedFromSection);
+    }
+
+    const cleanedSection = cleanText(
+      sectionHeading
+        .replace(/(?:BUG[ÜU]N\s+)?N[öo]bet[cç]i\s+Eczane(ler)?/gi, "")
+        .replace(/N[öo]bet[cç]i\s+Eczaneler/gi, "")
+    );
+    if (cleanedSection) {
+      return normalizeDistrictLabel(cleanedSection);
+    }
   }
-  return cleaned.replace(/nobetci eczane(ler)?/gi, "").trim() || null;
+
+  const headingCandidates = $(node)
+    .prevAll("h1,h2,h3,h4,strong,.main-color")
+    .map((_, item) => cleanText($(item).text()))
+    .get()
+    .filter(Boolean);
+
+  for (const heading of headingCandidates) {
+    const fromHeadingHint = detectAdanaDistrictFromText(heading);
+    if (fromHeadingHint) {
+      return fromHeadingHint;
+    }
+
+    const extracted = extractDistrictFromHeading(heading);
+    if (extracted) {
+      return normalizeDistrictLabel(extracted);
+    }
+
+    const cleaned = cleanText(
+      heading
+        .replace(/(?:BUG[ÜU]N\s+)?N[öo]bet[cç]i\s+Eczane(ler)?/gi, "")
+        .replace(/N[öo]bet[cç]i\s+Eczaneler/gi, "")
+    );
+
+    if (cleaned) {
+      return normalizeDistrictLabel(cleaned);
+    }
+  }
+
+  return null;
 }
 
 function findPharmacyName(parts: string[]): string | null {
@@ -1120,8 +1185,9 @@ function refineRowsByDistrictDictionary(
   fallbackDistrict: string
 ): ParsedRow[] {
   return rows.map((row) => {
-    const text = `${row.districtName} ${row.address} ${row.pharmacyName}`.toLocaleLowerCase("tr-TR");
-    const matched = districts.find((item) => text.includes(item.toLocaleLowerCase("tr-TR")));
+    const text = `${row.districtName} ${row.address} ${row.pharmacyName}`;
+    const normalizedText = toSlug(text);
+    const matched = districts.find((item) => normalizedText.includes(toSlug(item)));
     const district = matched ?? fallbackDistrict;
 
     return {
@@ -1130,6 +1196,81 @@ function refineRowsByDistrictDictionary(
       districtSlug: toSlug(district)
     };
   });
+}
+
+function normalizeDistrictLabel(value: string): string {
+  const cleaned = cleanText(value)
+    .replace(/\bADANA\b/gi, "")
+    .replace(/[/-]+$/g, "")
+    .trim();
+  if (!cleaned) {
+    return "";
+  }
+
+  return cleaned
+    .toLocaleLowerCase("tr-TR")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toLocaleUpperCase("tr-TR")}${part.slice(1)}`)
+    .join(" ");
+}
+
+function detectAdanaDistrictFromText(value: string): string | null {
+  const normalized = toSlug(value);
+  if (!normalized) {
+    return null;
+  }
+
+  const districts = [...ADANA_DISTRICTS].sort((a, b) => toSlug(b).length - toSlug(a).length);
+  for (const district of districts) {
+    const districtSlug = toSlug(district);
+    if (!districtSlug) {
+      continue;
+    }
+    if (normalized.includes(districtSlug)) {
+      return district;
+    }
+  }
+
+  return null;
+}
+
+function inferAdanaDistrictByCoordinates(lat: number | null, lng: number | null): string | null {
+  if (lat === null || lng === null) {
+    return null;
+  }
+
+  let best: { district: string; distanceKm: number } | null = null;
+  for (const center of ADANA_DISTRICT_CENTERS) {
+    const distanceKm = haversineKm(lat, lng, center.lat, center.lng);
+    if (!best || distanceKm < best.distanceKm) {
+      best = {
+        district: center.district,
+        distanceKm
+      };
+    }
+  }
+
+  if (!best || best.distanceKm > 40) {
+    return null;
+  }
+
+  return best.district;
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRad(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 const TURKISH_MONTH_MAP: Record<string, number> = {
@@ -1149,14 +1290,40 @@ const TURKISH_MONTH_MAP: Record<string, number> = {
 
 const ADANA_DISTRICTS = [
   "Seyhan",
-  "Cukurova",
-  "Yuregir",
-  "Sariçam",
-  "Pozanti",
+  "Çukurova",
+  "Yüreğir",
+  "Sarıçam",
+  "Salbaş",
+  "Karaisalı",
+  "Pozantı",
   "Kozan",
   "Ceyhan",
-  "Imamoglu",
-  "Aladag"
+  "İmamoğlu",
+  "Aladağ",
+  "Karataş",
+  "Saimbeyli",
+  "Tufanbeyli",
+  "Yumurtalık",
+  "Feke"
+] as const;
+
+const ADANA_DISTRICT_CENTERS = [
+  { district: "Seyhan", lat: 36.9926, lng: 35.3256 },
+  { district: "Çukurova", lat: 37.0493, lng: 35.2725 },
+  { district: "Yüreğir", lat: 36.9921, lng: 35.4409 },
+  { district: "Sarıçam", lat: 37.0476, lng: 35.4088 },
+  { district: "Salbaş", lat: 37.1188, lng: 35.1405 },
+  { district: "Karaisalı", lat: 37.2578, lng: 35.0588 },
+  { district: "Pozantı", lat: 37.4372, lng: 34.8741 },
+  { district: "Kozan", lat: 37.4507, lng: 35.8156 },
+  { district: "Ceyhan", lat: 37.0244, lng: 35.8174 },
+  { district: "İmamoğlu", lat: 37.2666, lng: 35.6674 },
+  { district: "Aladağ", lat: 37.5489, lng: 35.3985 },
+  { district: "Karataş", lat: 36.5712, lng: 35.3698 },
+  { district: "Saimbeyli", lat: 37.9867, lng: 36.0899 },
+  { district: "Tufanbeyli", lat: 38.2746, lng: 36.2209 },
+  { district: "Yumurtalık", lat: 36.7684, lng: 35.7928 },
+  { district: "Feke", lat: 37.8241, lng: 35.9151 }
 ] as const;
 
 const ISTANBUL_DISTRICTS = [

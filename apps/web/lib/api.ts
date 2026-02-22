@@ -5,6 +5,8 @@ const API_BASE_URL = publicEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:400
 
 interface DutyResponse {
   status: "ok" | "degraded";
+  duty_date: string;
+  available_dates: string[];
   son_guncelleme: string | null;
   degraded_info: {
     last_successful_update: string | null;
@@ -27,7 +29,12 @@ export async function fetchProvinces(): Promise<ProvinceDto[]> {
 }
 
 export async function fetchDutyByProvince(ilSlug: string): Promise<DutyResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/nobetci`, {
+  return fetchDutyByProvinceDate(ilSlug);
+}
+
+export async function fetchDutyByProvinceDate(ilSlug: string, dutyDate?: string): Promise<DutyResponse> {
+  const query = dutyDate ? `?date=${encodeURIComponent(dutyDate)}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/nobetci${query}`, {
     cache: "no-store"
   });
   if (!response.ok) {
@@ -37,8 +44,17 @@ export async function fetchDutyByProvince(ilSlug: string): Promise<DutyResponse>
 }
 
 export async function fetchDutyByDistrict(ilSlug: string, ilceSlug: string): Promise<DutyResponse> {
+  return fetchDutyByDistrictDate(ilSlug, ilceSlug);
+}
+
+export async function fetchDutyByDistrictDate(
+  ilSlug: string,
+  ilceSlug: string,
+  dutyDate?: string
+): Promise<DutyResponse> {
+  const query = dutyDate ? `?date=${encodeURIComponent(dutyDate)}` : "";
   const response = await fetch(
-    `${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/${encodeURIComponent(ilceSlug)}/nobetci`,
+    `${API_BASE_URL}/api/il/${encodeURIComponent(ilSlug)}/${encodeURIComponent(ilceSlug)}/nobetci${query}`,
     {
       cache: "no-store"
     }

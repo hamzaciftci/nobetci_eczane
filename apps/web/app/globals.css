@@ -398,6 +398,7 @@ textarea.btn {
 
 .mode-panel,
 .district-panel,
+.duty-date-tabs,
 .map-panel,
 .nearest-panel {
   display: grid;
@@ -406,9 +407,25 @@ textarea.btn {
 
 .mode-panel h3,
 .district-panel h3,
+.duty-date-tabs h3,
 .map-panel h3,
 .nearest-panel h3 {
   font-size: clamp(24px, 2.5vw, 34px);
+}
+
+.duty-date-tab-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.duty-date-tab {
+  text-decoration: none;
+}
+
+.duty-date-tab.active {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .mode-actions {

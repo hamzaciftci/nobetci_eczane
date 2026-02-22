@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+﻿import { BadRequestException, Injectable } from "@nestjs/common";
 import { DutyRecordDto, resolveActiveDutyWindow } from "../../shared";
 import { QueryResultRow } from "pg";
 import { ApiMetricsService } from "../../infra/api-metrics.service";
@@ -25,6 +25,10 @@ type DutyUpdateRow = QueryResultRow & {
   last_verified_at: string | null;
 };
 
+type DutyDateRow = QueryResultRow & {
+  duty_date: string;
+};
+
 type DegradedState = {
   last_successful_update: string | null;
   stale_minutes: number | null;
@@ -33,6 +37,8 @@ type DegradedState = {
 
 type DutyResponse = {
   status: "ok" | "degraded";
+  duty_date: string;
+  available_dates: string[];
   son_guncelleme: string | null;
   degraded_info: {
     last_successful_update: string | null;
@@ -45,6 +51,7 @@ type DutyResponse = {
 
 const MAX_DUTY_TTL_SECONDS = 300;
 const DUTY_TTL_SECONDS = resolveDutyTtl();
+const DUTY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 @Injectable()
 export class DutiesService {
@@ -54,9 +61,9 @@ export class DutiesService {
     private readonly apiMetrics: ApiMetricsService
   ) {}
 
-  async byProvince(ilSlug: string) {
+  async byProvince(ilSlug: string, requestedDate?: string) {
     this.apiMetrics.trackEndpoint("/api/il/:il/nobetci");
-    const { dutyDate } = resolveActiveDutyWindow();
+    const dutyDate = this.resolveRequestedDutyDate(requestedDate);
     const cacheKey = `api:duty:${ilSlug}:all:${dutyDate}`;
 
     const cached = await this.redis.getJson<DutyResponse>(cacheKey);
@@ -69,27 +76,17 @@ export class DutiesService {
     }
     this.apiMetrics.trackCacheMiss();
 
-    const query = await this.db.query<DutyRow>(
-      `
-      select
-        eczane_adi, il, ilce, adres, telefon, lat, lng, kaynak, kaynak_url,
-        son_guncelleme, dogruluk_puani, dogrulama_kaynagi_sayisi, is_degraded
-      from api_active_duty
-      where il_slug = $1
-      order by ilce asc, eczane_adi asc
-      `,
-      [ilSlug]
-    );
-
+    const query = await this.queryDutyRowsByProvince(ilSlug, dutyDate);
     const degraded = await this.getDegradedInfo(ilSlug);
-    const payload = this.toResponse(query.rows, degraded);
+    const availableDates = await this.listAvailableDates(ilSlug);
+    const payload = this.toResponse(query.rows, degraded, dutyDate, availableDates);
     await this.redis.setJson(cacheKey, payload, DUTY_TTL_SECONDS);
     return payload;
   }
 
-  async byDistrict(ilSlug: string, ilceSlug: string) {
+  async byDistrict(ilSlug: string, ilceSlug: string, requestedDate?: string) {
     this.apiMetrics.trackEndpoint("/api/il/:il/:ilce/nobetci");
-    const { dutyDate } = resolveActiveDutyWindow();
+    const dutyDate = this.resolveRequestedDutyDate(requestedDate);
     const cacheKey = `api:duty:${ilSlug}:${ilceSlug}:${dutyDate}`;
 
     const cached = await this.redis.getJson<DutyResponse>(cacheKey);
@@ -102,22 +99,138 @@ export class DutiesService {
     }
     this.apiMetrics.trackCacheMiss();
 
-    const query = await this.db.query<DutyRow>(
-      `
-      select
-        eczane_adi, il, ilce, adres, telefon, lat, lng, kaynak, kaynak_url,
-        son_guncelleme, dogruluk_puani, dogrulama_kaynagi_sayisi, is_degraded
-      from api_active_duty
-      where il_slug = $1 and ilce_slug = $2
-      order by eczane_adi asc
-      `,
-      [ilSlug, ilceSlug]
-    );
-
+    const query = await this.queryDutyRowsByDistrict(ilSlug, ilceSlug, dutyDate);
     const degraded = await this.getDegradedInfo(ilSlug);
-    const payload = this.toResponse(query.rows, degraded);
+    const availableDates = await this.listAvailableDates(ilSlug, ilceSlug);
+    const payload = this.toResponse(query.rows, degraded, dutyDate, availableDates);
     await this.redis.setJson(cacheKey, payload, DUTY_TTL_SECONDS);
     return payload;
+  }
+
+  private resolveRequestedDutyDate(value?: string): string {
+    const fallback = resolveActiveDutyWindow().dutyDate;
+    const cleaned = (value ?? "").trim();
+    if (!cleaned) {
+      return fallback;
+    }
+
+    if (!DUTY_DATE_PATTERN.test(cleaned)) {
+      throw new BadRequestException("date must be YYYY-MM-DD");
+    }
+
+    return cleaned;
+  }
+
+  private async queryDutyRowsByProvince(ilSlug: string, dutyDate: string) {
+    return this.db.query<DutyRow>(
+      `
+      select
+        ph.canonical_name as eczane_adi,
+        pr.name as il,
+        d.name as ilce,
+        ph.address as adres,
+        ph.phone as telefon,
+        ph.lat::text as lat,
+        ph.lng::text as lng,
+        string_agg(distinct s.name, ', ') as kaynak,
+        min(de.source_url) as kaynak_url,
+        max(dr.last_verified_at) as son_guncelleme,
+        dr.confidence_score::text as dogruluk_puani,
+        dr.verification_source_count as dogrulama_kaynagi_sayisi,
+        dr.is_degraded
+      from duty_records dr
+      join pharmacies ph on ph.id = dr.pharmacy_id
+      join provinces pr on pr.id = dr.province_id
+      join districts d on d.id = dr.district_id
+      join duty_evidence de on de.duty_record_id = dr.id
+      join sources s on s.id = de.source_id
+      where pr.slug = $1
+        and dr.duty_date = $2
+      group by
+        dr.id,
+        ph.canonical_name,
+        pr.name,
+        d.name,
+        ph.address,
+        ph.phone,
+        ph.lat,
+        ph.lng,
+        dr.confidence_score,
+        dr.verification_source_count,
+        dr.is_degraded
+      order by d.name asc, ph.canonical_name asc
+      `,
+      [ilSlug, dutyDate]
+    );
+  }
+
+  private async queryDutyRowsByDistrict(ilSlug: string, ilceSlug: string, dutyDate: string) {
+    return this.db.query<DutyRow>(
+      `
+      select
+        ph.canonical_name as eczane_adi,
+        pr.name as il,
+        d.name as ilce,
+        ph.address as adres,
+        ph.phone as telefon,
+        ph.lat::text as lat,
+        ph.lng::text as lng,
+        string_agg(distinct s.name, ', ') as kaynak,
+        min(de.source_url) as kaynak_url,
+        max(dr.last_verified_at) as son_guncelleme,
+        dr.confidence_score::text as dogruluk_puani,
+        dr.verification_source_count as dogrulama_kaynagi_sayisi,
+        dr.is_degraded
+      from duty_records dr
+      join pharmacies ph on ph.id = dr.pharmacy_id
+      join provinces pr on pr.id = dr.province_id
+      join districts d on d.id = dr.district_id
+      join duty_evidence de on de.duty_record_id = dr.id
+      join sources s on s.id = de.source_id
+      where pr.slug = $1
+        and d.slug = $2
+        and dr.duty_date = $3
+      group by
+        dr.id,
+        ph.canonical_name,
+        pr.name,
+        d.name,
+        ph.address,
+        ph.phone,
+        ph.lat,
+        ph.lng,
+        dr.confidence_score,
+        dr.verification_source_count,
+        dr.is_degraded
+      order by ph.canonical_name asc
+      `,
+      [ilSlug, ilceSlug, dutyDate]
+    );
+  }
+
+  private async listAvailableDates(ilSlug: string, ilceSlug?: string): Promise<string[]> {
+    const params: string[] = [ilSlug];
+    const districtCondition = ilceSlug ? "and d.slug = $2" : "";
+    if (ilceSlug) {
+      params.push(ilceSlug);
+    }
+
+    const query = await this.db.query<DutyDateRow>(
+      `
+      select distinct dr.duty_date::text as duty_date
+      from duty_records dr
+      join provinces p on p.id = dr.province_id
+      join districts d on d.id = dr.district_id
+      where p.slug = $1
+        ${districtCondition}
+        and dr.duty_date >= (now() at time zone 'Europe/Istanbul')::date
+        and dr.duty_date <= ((now() at time zone 'Europe/Istanbul')::date + interval '14 day')
+      order by dr.duty_date asc
+      `,
+      params
+    );
+
+    return query.rows.map((row) => row.duty_date).filter(Boolean);
   }
 
   private async hasNewerProvinceUpdate(
@@ -147,7 +260,12 @@ export class DutiesService {
     return new Date(dbLatestIso).getTime() > new Date(cachedLatestIso).getTime();
   }
 
-  private toResponse(rows: DutyRow[], degraded: DegradedState): DutyResponse {
+  private toResponse(
+    rows: DutyRow[],
+    degraded: DegradedState,
+    dutyDate: string,
+    availableDates: string[]
+  ): DutyResponse {
     const data = rows.map<DutyRecordDto>((row) => ({
       eczane_adi: row.eczane_adi,
       il: row.il,
@@ -175,6 +293,8 @@ export class DutiesService {
 
     return {
       status,
+      duty_date: dutyDate,
+      available_dates: [...new Set([...(availableDates ?? []), dutyDate])].sort(),
       son_guncelleme: computedLatest,
       degraded_info:
         status === "degraded"

@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
-import { normalizePharmacyName, resolveActiveDutyWindow, toSlug } from "@nobetci/shared";
+import { ISTANBUL_TZ, normalizePharmacyName, resolveActiveDutyWindow, toSlug } from "@nobetci/shared";
 import { load } from "cheerio";
+import { DateTime } from "luxon";
 import { SourceAdapter } from "./adapter.interface";
 import { AdapterFetchResult, SourceBatch, SourceEndpointConfig, SourceRecord } from "../core/types";
 import { parseHtmlToSourceRecords } from "../parsers/html-parser";
@@ -29,6 +30,9 @@ export class HttpHtmlAdapter implements SourceAdapter {
   ): Promise<AdapterFetchResult> {
     if (endpoint.parserKey === "istanbul_secondary_v1" && endpoint.endpointUrl.includes("istanbuleczaciodasi.org.tr")) {
       return fetchIstanbulNobetData(endpoint, conditionalHeaders);
+    }
+    if (isAnkaraAeoEndpoint(endpoint)) {
+      return fetchAnkaraNobetData(endpoint);
     }
 
     const freshness = await fetchFreshPayload(endpoint, conditionalHeaders);
@@ -183,7 +187,7 @@ async function fetchIstanbulNobetData(
 
     const records = normalizeIstanbulRecords(districtPayloadRaw, endpoint, district, dutyDate, fetchedAt);
     for (const record of records) {
-      const key = `${record.districtSlug}:${record.normalizedName}`;
+      const key = buildRecordKey(record);
       if (!dedupe.has(key)) {
         dedupe.set(key, record);
       }
@@ -217,6 +221,132 @@ async function fetchIstanbulNobetData(
       source: endpoint.endpointUrl,
       district_count: districts.length,
       record_count: records.length
+    })
+  };
+}
+
+function isAnkaraAeoEndpoint(endpoint: SourceEndpointConfig): boolean {
+  if (endpoint.provinceSlug !== "ankara") {
+    return false;
+  }
+
+  let hostname = "";
+  try {
+    hostname = new URL(endpoint.endpointUrl).hostname;
+  } catch {
+    return false;
+  }
+
+  return /(?:^|\.)aeo\.org\.tr/i.test(hostname) && /\/nobetci-eczaneler/i.test(endpoint.endpointUrl);
+}
+
+async function fetchAnkaraNobetData(endpoint: SourceEndpointConfig): Promise<AdapterFetchResult> {
+  const now = DateTime.now().setZone(ISTANBUL_TZ);
+  const startDate = now.startOf("day");
+  const futureDays = Math.max(0, Number(process.env.ANKARA_AEO_FUTURE_DAYS ?? 6));
+  const maxDays = Math.min(14, futureDays);
+
+  const dedupe = new Map<string, SourceRecord>();
+  const payloadByDate: Record<string, { status: string; count: number; url: string }> = {};
+  let lastStatus = 200;
+
+  for (let offset = 0; offset <= maxDays; offset += 1) {
+    const dutyDate = startDate.plus({ days: offset }).toISODate();
+    if (!dutyDate) {
+      continue;
+    }
+
+    const url = new URL(`/getPharmacies/${dutyDate}`, endpoint.endpointUrl).toString();
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: defaultHeaders()
+    });
+    lastStatus = response.status;
+    if (!response.ok) {
+      payloadByDate[dutyDate] = {
+        status: `http_${response.status}`,
+        count: 0,
+        url
+      };
+      continue;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      payloadByDate[dutyDate] = {
+        status: "invalid_json",
+        count: 0,
+        url
+      };
+      continue;
+    }
+
+    const parsed = payload as { status?: string; html?: string };
+    const html = cleanText(String(parsed?.html ?? "")) ? String(parsed?.html ?? "") : "";
+    if (!html) {
+      payloadByDate[dutyDate] = {
+        status: parsed?.status ?? "empty_html",
+        count: 0,
+        url
+      };
+      continue;
+    }
+
+    const records = parseHtmlToSourceRecords(
+      html,
+      {
+        ...endpoint,
+        endpointUrl: url,
+        parserKey: "generic_auto_v1"
+      },
+      {
+        dutyDateOverride: dutyDate
+      }
+    );
+
+    for (const record of records) {
+      const key = buildRecordKey(record);
+      if (!dedupe.has(key)) {
+        dedupe.set(key, record);
+      }
+    }
+
+    payloadByDate[dutyDate] = {
+      status: parsed?.status ?? "ok",
+      count: records.length,
+      url
+    };
+  }
+
+  const records = normalizeSourceRecordDistricts([...dedupe.values()], endpoint.provinceSlug);
+  if (!records.length) {
+    throw new Error("Ankara parser produced zero records");
+  }
+
+  const batch: SourceBatch = {
+    source: {
+      sourceName: endpoint.sourceName,
+      sourceType: endpoint.sourceType,
+      sourceUrl: endpoint.endpointUrl,
+      authorityWeight: endpoint.authorityWeight,
+      sourceEndpointId: endpoint.sourceEndpointId,
+      parserKey: endpoint.parserKey
+    },
+    records
+  };
+
+  return {
+    batch,
+    httpStatus: lastStatus,
+    fetchUrl: endpoint.endpointUrl,
+    rawPayload: JSON.stringify({
+      source: endpoint.endpointUrl,
+      date_count: Object.keys(payloadByDate).length,
+      record_count: records.length,
+      payload_by_date: payloadByDate
     })
   };
 }
@@ -427,7 +557,7 @@ async function fetchAydinPostRecords(
           parserKey
         });
         for (const record of records) {
-          const key = `${record.districtSlug}:${record.normalizedName}`;
+          const key = buildRecordKey(record);
           if (!dedupe.has(key)) {
             dedupe.set(key, record);
           }
@@ -568,7 +698,7 @@ async function fetchDistrictFormRecords(
           );
 
           for (const record of records) {
-            const key = `${record.districtSlug}:${record.normalizedName}`;
+            const key = buildRecordKey(record);
             if (!dedupe.has(key)) {
               dedupe.set(key, record);
             }
@@ -594,7 +724,7 @@ function mergeSourceRecords(base: SourceRecord[], incoming: SourceRecord[]): Sou
 
   const map = new Map<string, SourceRecord>();
   for (const record of [...base, ...incoming]) {
-    const key = `${record.districtSlug}:${record.normalizedName}`;
+    const key = buildRecordKey(record);
     if (!map.has(key)) {
       map.set(key, record);
     }
@@ -868,7 +998,7 @@ async function fetchRelatedRecords(endpoint: SourceEndpointConfig, baseHtml: str
             parserKey
           });
           for (const record of records) {
-            const key = `${record.districtSlug}:${record.normalizedName}`;
+            const key = buildRecordKey(record);
             if (!dedupe.has(key)) {
               dedupe.set(key, record);
             }
@@ -1132,6 +1262,10 @@ export async function fetchEndpoint(
 
 export function checksumPayload(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function buildRecordKey(record: Pick<SourceRecord, "dutyDate" | "districtSlug" | "normalizedName">): string {
+  return `${record.dutyDate}:${record.districtSlug}:${record.normalizedName}`;
 }
 
 function isHtmlFormat(format: SourceEndpointConfig["format"]): boolean {

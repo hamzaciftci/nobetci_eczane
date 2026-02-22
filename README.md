@@ -69,7 +69,9 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 ## Endpoints
 - `GET /api/iller`
 - `GET /api/il/{il}/nobetci`
+- `GET /api/il/{il}/nobetci?date=YYYY-MM-DD`
 - `GET /api/il/{il}/{ilce}/nobetci`
+- `GET /api/il/{il}/{ilce}/nobetci?date=YYYY-MM-DD`
 - `GET /api/nearest?lat=&lng=`
 - `POST /api/yanlis-bilgi`
 - `GET /api/admin/ingestion/metrics`
@@ -93,6 +95,7 @@ Bu repo, `business_plan.pdf` referansina sadik kalarak baslatilan teknik MVP isk
 - Static fallback varsayilan olarak kapalidir (`ALLOW_STATIC_FALLBACK=0`); acil durumda bilincli olarak acilabilir.
 - Production'da static fallback zorla kapatilir; sistem sahte/static eczane listesi yayinlamaz.
 - API endpointleri `Cache-Control: no-store` ile doner; CDN/server cache kaynakli stale cevap engellenir.
+- Ankara (`https://www.aeo.org.tr/nobetci-eczaneler`) icin worker her run'da bugun + `ANKARA_AEO_FUTURE_DAYS` (varsayilan `6`) gunu da ingest eder.
 - `source_endpoints` bos ise worker dahili pilot endpoint konfigu ile calismayi surdurur.
 - Web sayfalarinda OSM + Leaflet harita ve tamamen client-side "en yakin" modulu aktif.
 - `ADMIN_API_TOKEN` tanimliysa admin endpointlerinde `x-admin-token` gerekir.

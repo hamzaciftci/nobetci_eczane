@@ -22,13 +22,15 @@ export function crossCheck(input: CrossCheckInput): CrossCheckOutput {
 
   const primaryRecords = primary?.records ?? [];
   const secondaryRecords = secondary?.records ?? [];
-  const secondaryMap = new Map(secondaryRecords.map((item) => [recordKey(item.districtSlug, item.normalizedName), item]));
+  const secondaryMap = new Map(
+    secondaryRecords.map((item) => [recordKey(item.dutyDate, item.districtSlug, item.normalizedName), item])
+  );
 
   const records: VerifiedRecord[] = [];
   const conflicts: ConflictItem[] = [];
 
   for (const row of primaryRecords) {
-    const key = recordKey(row.districtSlug, row.normalizedName);
+    const key = recordKey(row.dutyDate, row.districtSlug, row.normalizedName);
     const sec = secondaryMap.get(key);
 
     const evidence = [
@@ -132,8 +134,8 @@ function newerThan(left: string, right: string): boolean {
   return new Date(left).getTime() > new Date(right).getTime();
 }
 
-function recordKey(districtSlug: string, normalizedName: string): string {
-  return `${districtSlug}:${normalizedName}`;
+function recordKey(dutyDate: string, districtSlug: string, normalizedName: string): string {
+  return `${dutyDate}:${districtSlug}:${normalizedName}`;
 }
 
 function clamp(value: number, min: number, max: number): number {

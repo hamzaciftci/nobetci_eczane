@@ -15,12 +15,21 @@ interface ParsedRow {
 
 type ParserFn = ($: CheerioAPI, endpoint: SourceEndpointConfig) => ParsedRow[];
 
-export function parseHtmlToSourceRecords(html: string, endpoint: SourceEndpointConfig): SourceRecord[] {
+interface ParseOptions {
+  dutyDateOverride?: string;
+}
+
+export function parseHtmlToSourceRecords(
+  html: string,
+  endpoint: SourceEndpointConfig,
+  options: ParseOptions = {}
+): SourceRecord[] {
   const $ = load(html);
   const parsedRows = selectParser(endpoint.parserKey)($, endpoint);
   const rows = normalizeDistrictRows(parsedRows, endpoint.provinceSlug);
   const now = new Date().toISOString();
-  const { dutyDate } = resolveActiveDutyWindow();
+  const { dutyDate: activeDutyDate } = resolveActiveDutyWindow();
+  const dutyDate = options.dutyDateOverride ?? activeDutyDate;
 
   return rows.map<SourceRecord>((row) => ({
     provinceSlug: endpoint.provinceSlug,

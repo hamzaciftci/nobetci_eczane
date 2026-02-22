@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { DegradedBanner } from "../../../components/degraded-banner";
+import { DutyDateTabs } from "../../../components/duty-date-tabs";
 import { MapPanel } from "../../../components/map-panel";
 import { NearestClient } from "../../../components/nearest-client";
 import { PharmacyCard } from "../../../components/pharmacy-card";
 import { PharmacyJsonLd } from "../../../components/pharmacy-jsonld";
-import { fetchDutyByProvince } from "../../../lib/api";
+import { fetchDutyByProvinceDate } from "../../../lib/api";
 import { buildDailyDutyTitle } from "../../../lib/date";
 import { toSlug } from "../../../lib/shared";
 
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string }>;
+  searchParams: Promise<{ date?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -26,9 +28,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProvincePage({ params }: Props) {
+export default async function ProvincePage({ params, searchParams }: Props) {
   const { il } = await params;
-  const duty = await fetchDutyByProvince(il);
+  const { date } = await searchParams;
+  const duty = await fetchDutyByProvinceDate(il, date);
   const byDistrict = groupByDistrict(duty.data);
 
   return (
@@ -37,7 +40,8 @@ export default async function ProvincePage({ params }: Props) {
         <p className="home-badge">Il geneli nobetci eczane listesi</p>
         <h2>{il.toLocaleUpperCase("tr-TR")} NOBETCI ECZANELER</h2>
         <p className="muted">
-          Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
+          Tarih: {formatDateLabel(duty.duty_date)} | Son guncelleme:{" "}
+          {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
         </p>
         <div className="city-meta-chips">
           <span className="pill">Durum: {duty.status === "degraded" ? "Degraded" : "Dogrulandi"}</span>
@@ -55,6 +59,7 @@ export default async function ProvincePage({ params }: Props) {
       ) : null}
 
       <PharmacyJsonLd items={duty.data} />
+      <DutyDateTabs basePath={`/nobetci-eczane/${il}`} selectedDate={duty.duty_date} availableDates={duty.available_dates} />
 
       <section className="panel mode-panel">
         <h3>Eczane Gosterim Modlari</h3>
@@ -104,10 +109,15 @@ export default async function ProvincePage({ params }: Props) {
   );
 }
 
-function groupByDistrict(items: Awaited<ReturnType<typeof fetchDutyByProvince>>["data"]) {
+function groupByDistrict(items: Awaited<ReturnType<typeof fetchDutyByProvinceDate>>["data"]) {
   return items.reduce<Record<string, typeof items>>((acc, item) => {
     acc[item.ilce] = acc[item.ilce] ?? [];
     acc[item.ilce].push(item);
     return acc;
   }, {});
+}
+
+function formatDateLabel(dateIso: string): string {
+  const [year, month, day] = dateIso.split("-");
+  return `${day}.${month}.${year}`;
 }

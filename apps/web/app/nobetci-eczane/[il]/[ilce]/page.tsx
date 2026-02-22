@@ -1,17 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { DegradedBanner } from "../../../../components/degraded-banner";
+import { DutyDateTabs } from "../../../../components/duty-date-tabs";
 import { MapPanel } from "../../../../components/map-panel";
 import { NearestClient } from "../../../../components/nearest-client";
 import { PharmacyCard } from "../../../../components/pharmacy-card";
 import { PharmacyJsonLd } from "../../../../components/pharmacy-jsonld";
-import { fetchDutyByDistrict } from "../../../../lib/api";
+import { fetchDutyByDistrictDate } from "../../../../lib/api";
 import { buildDailyDutyTitle } from "../../../../lib/date";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ il: string; ilce: string }>;
+  searchParams: Promise<{ date?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -25,9 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function DistrictPage({ params }: Props) {
+export default async function DistrictPage({ params, searchParams }: Props) {
   const { il, ilce } = await params;
-  const duty = await fetchDutyByDistrict(il, ilce);
+  const { date } = await searchParams;
+  const duty = await fetchDutyByDistrictDate(il, ilce, date);
 
   return (
     <main className="grid city-page">
@@ -37,7 +40,8 @@ export default async function DistrictPage({ params }: Props) {
           {ilce.toLocaleUpperCase("tr-TR")} / {il.toLocaleUpperCase("tr-TR")}
         </h2>
         <p className="muted">
-          Son guncelleme: {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
+          Tarih: {formatDateLabel(duty.duty_date)} | Son guncelleme:{" "}
+          {duty.son_guncelleme ? new Date(duty.son_guncelleme).toLocaleString("tr-TR") : "-"}
         </p>
         <div className="city-meta-chips">
           <span className="pill">Durum: {duty.status === "degraded" ? "Degraded" : "Dogrulandi"}</span>
@@ -55,6 +59,11 @@ export default async function DistrictPage({ params }: Props) {
       ) : null}
 
       <PharmacyJsonLd items={duty.data} />
+      <DutyDateTabs
+        basePath={`/nobetci-eczane/${il}/${ilce}`}
+        selectedDate={duty.duty_date}
+        availableDates={duty.available_dates}
+      />
 
       <section className="panel mode-panel">
         <h3>Eczane Gosterim Modlari</h3>
@@ -86,4 +95,9 @@ export default async function DistrictPage({ params }: Props) {
       )}
     </main>
   );
+}
+
+function formatDateLabel(dateIso: string): string {
+  const [year, month, day] = dateIso.split("-");
+  return `${day}.${month}.${year}`;
 }

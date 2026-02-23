@@ -11,10 +11,6 @@
     {
       "path": "/api/cron/full-sync",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/validate-all",
-      "schedule": "*/10 * * * *"
     }
   ],
   "routes": [

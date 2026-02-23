@@ -7,7 +7,7 @@
     "node": "20.x"
   },
   "scripts": {
-    "build": "nest build",
+    "build": "pnpm install --frozen-lockfile --prod=false || pnpm install --no-frozen-lockfile --prod=false; pnpm exec nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
     "test:manual-override": "node scripts/manual-override.integration.mjs",

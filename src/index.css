@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Legacy font vars — kept for PrintPage/ScreenPage */
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Design tokens */
+    --background: 240 14% 97%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 2 100% 44%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 94%;
+    --secondary-foreground: 221 39% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 2 100% 44%;
+    --radius: 0.75rem;
+    --primary-dark: 0 100% 35%;
+    --primary-light: 0 100% 58%;
+    --surface: 0 0% 100%;
+
+    /* Legacy trust color → maps to accent for backward compat */
+    --trust: 142 71% 45%;
+    --trust-foreground: 0 0% 100%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 30px -4px rgba(0,0,0,0.08);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    --shadow-card-hover: 0 8px 25px -5px rgba(0,0,0,0.1);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 2 100% 44%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 2 100% 44%;
+  }
+
+  .dark {
+    --background: 224 47% 5%;
+    --foreground: 210 40% 98%;
+    --card: 224 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 2 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 2 100% 50%;
+    --primary-dark: 0 100% 40%;
+    --primary-light: 0 100% 62%;
+    --surface: 224 47% 10%;
+
+    --trust: 142 71% 45%;
+    --trust-foreground: 0 0% 100%;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.15);
+    --shadow-md: 0 4px 16px -2px rgba(0,0,0,0.25);
+    --shadow-lg: 0 10px 30px -4px rgba(0,0,0,0.3);
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-card-hover: 0 8px 25px -5px rgba(0,0,0,0.35);
+
+    --sidebar-background: 224 47% 8%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 2 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 2 100% 50%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  html { scroll-behavior: smooth; }
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .font-body { font-family: var(--font-body); }
+  .font-display { font-family: var(--font-display); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+  .shadow-premium { box-shadow: var(--shadow-lg); }
+}
+
+/* Legacy screen/hero shells — kept for ScreenPage */
+.hero-shell {
+  border: 1px solid hsl(var(--border) / 0.85);
+  background: linear-gradient(140deg, hsl(0 0% 100% / 0.95), hsl(220 20% 96% / 0.9));
+  box-shadow: var(--shadow-lg);
+  border-radius: 1rem;
+  padding: clamp(1.25rem, 2.7vw, 2rem);
+}
+
+.screen-shell {
+  background:
+    radial-gradient(circle at 16% 10%, hsl(2 78% 54% / 0.2), transparent 37%),
+    radial-gradient(circle at 90% 80%, hsl(142 71% 45% / 0.15), transparent 38%),
+    linear-gradient(145deg, #0d0808 0%, #120505 48%, #0d0808 100%);
+}
+
+/* Print */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  @page { margin: 1.5cm; }
+}
+
+.print-only { display: none; }

@@ -16,16 +16,14 @@ export default async function handler(req, res) {
   try {
     const rows = await withDb((db) =>
       db`
-        select
-          v.*,
-          resolve_active_duty_date()::text as duty_date
+        select v.*
         from api_active_duty v
         where v.il_slug = ${ilSlug}
         order by v.ilce, v.eczane_adi
       `
     );
 
-    const dutyDate = rows[0]?.duty_date ?? resolveActiveDutyDate();
+    const dutyDate = resolveActiveDutyDate();
     return sendJson(res, 200, buildDutyResponse(rows, dutyDate));
   } catch (error) {
     if (isViewMissing(error)) {

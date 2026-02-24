@@ -5,8 +5,17 @@
   "functions": {
     "api/**/*.js": {
       "maxDuration": 10
+    },
+    "api/cron/ingest.js": {
+      "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/ingest",
+      "schedule": "0 6 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/).*)",

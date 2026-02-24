@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // New pages
 import Index from "./pages/Index";
@@ -40,46 +41,48 @@ function LegacyDistrictRedirect() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ErrorBoundary>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* ── Main routes ─────────────────────────────────────── */}
-            <Route path="/" element={<Index />} />
-            <Route path="/il/:il" element={<CityPage />} />
-            <Route path="/il/:il/:ilce" element={<CityPage />} />
-            <Route path="/en-yakin" element={<NearestPharmacy />} />
-            <Route path="/iletisim" element={<Contact />} />
-            <Route path="/sitene-ekle" element={<EmbedPage />} />
-            <Route path="/embed/:il" element={<EmbedWidget />} />
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* ── Main routes ─────────────────────────────────────── */}
+              <Route path="/" element={<Index />} />
+              <Route path="/il/:il" element={<CityPage />} />
+              <Route path="/il/:il/:ilce" element={<CityPage />} />
+              <Route path="/en-yakin" element={<NearestPharmacy />} />
+              <Route path="/iletisim" element={<Contact />} />
+              <Route path="/sitene-ekle" element={<EmbedPage />} />
+              <Route path="/embed/:il" element={<EmbedWidget />} />
 
-            {/* ── Utility pages (print / screen display) ─────────── */}
-            <Route path="/il/:il/yazdir" element={<PrintPage />} />
-            <Route path="/il/:il/ekran" element={<ScreenPage />} />
-            <Route path="/il/:il/:ilce/yazdir" element={<PrintPage />} />
-            <Route path="/il/:il/:ilce/ekran" element={<ScreenPage />} />
+              {/* ── Utility pages (print / screen display) ─────────── */}
+              <Route path="/il/:il/yazdir" element={<PrintPage />} />
+              <Route path="/il/:il/ekran" element={<ScreenPage />} />
+              <Route path="/il/:il/:ilce/yazdir" element={<PrintPage />} />
+              <Route path="/il/:il/:ilce/ekran" element={<ScreenPage />} />
 
-            {/* ── Admin ───────────────────────────────────────────── */}
-            <Route path="/admin" element={<AdminPage />} />
+              {/* ── Admin ───────────────────────────────────────────── */}
+              <Route path="/admin" element={<AdminPage />} />
 
-            {/* ── Legacy /nobetci-eczane/ redirects ──────────────── */}
-            <Route path="/nobetci-eczane/:il" element={<LegacyProvinceRedirect />} />
-            <Route path="/nobetci-eczane/:il/:ilce" element={<LegacyDistrictRedirect />} />
-            <Route path="/nobetci-eczane/:il/yazdir" element={<PrintPage />} />
-            <Route path="/nobetci-eczane/:il/ekran" element={<ScreenPage />} />
-            <Route path="/nobetci-eczane/:il/:ilce/yazdir" element={<PrintPage />} />
-            <Route path="/nobetci-eczane/:il/:ilce/ekran" element={<ScreenPage />} />
+              {/* ── Legacy /nobetci-eczane/ redirects ──────────────── */}
+              <Route path="/nobetci-eczane/:il" element={<LegacyProvinceRedirect />} />
+              <Route path="/nobetci-eczane/:il/:ilce" element={<LegacyDistrictRedirect />} />
+              <Route path="/nobetci-eczane/:il/yazdir" element={<PrintPage />} />
+              <Route path="/nobetci-eczane/:il/ekran" element={<ScreenPage />} />
+              <Route path="/nobetci-eczane/:il/:ilce/yazdir" element={<PrintPage />} />
+              <Route path="/nobetci-eczane/:il/:ilce/ekran" element={<ScreenPage />} />
 
-            {/* ── 404 ─────────────────────────────────────────────── */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ErrorBoundary>
-    </TooltipProvider>
-  </QueryClientProvider>
+              {/* ── 404 ─────────────────────────────────────────────── */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Cross } from "lucide-react";
+import { Menu, Moon, Sun, X, Cross } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const navLinks = [
   { to: "/", label: "Anasayfa" },
@@ -14,6 +15,13 @@ const navLinks = [
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { resolvedTheme, setTheme } = useTheme();
+
+  const toggleTheme = () =>
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+
+  const ThemeIcon = resolvedTheme === "dark" ? Sun : Moon;
+  const themeLabel = resolvedTheme === "dark" ? "Açık moda geç" : "Koyu moda geç";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-xl no-print">
@@ -27,32 +35,53 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                location.pathname === link.to
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Desktop nav + theme toggle */}
+        <div className="hidden items-center gap-1 md:flex">
+          <nav className="flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={cn(
+                  "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                  location.pathname === link.to
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={themeLabel}
+          >
+            <ThemeIcon className="h-[1.1rem] w-[1.1rem]" />
+          </Button>
+        </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menü"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        {/* Mobile: theme toggle + hamburger */}
+        <div className="flex items-center gap-1 md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={themeLabel}
+          >
+            <ThemeIcon className="h-[1.1rem] w-[1.1rem]" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menü"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {mobileOpen && (

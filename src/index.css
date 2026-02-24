@@ -104,6 +104,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
     min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   html { scroll-behavior: smooth; }
 }

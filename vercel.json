@@ -5,13 +5,7 @@
     "functions":  {
                       "api/**/*.js":  {
                                           "maxDuration":  10
-                                      },
-                      "api/cron/ingest.js":  {
-                                                 "maxDuration":  60
-                                             },
-                      "api/admin/ingestion/recovery/[il]/trigger.js":  {
-                                                                           "maxDuration":  30
-                                                                       }
+                                      }
                   },
     "crons":  [
                   {

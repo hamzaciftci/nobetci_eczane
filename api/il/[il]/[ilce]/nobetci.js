@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     }
 
     const { rows, dutyDate, stale, lastSuccessfulDate } = await withDb(async (db) => {
+      // 1. Try canonical VIEW
       try {
         const viewRows = await db`
           select v.*
@@ -38,12 +39,15 @@ export default async function handler(req, res) {
           return { rows: viewRows, dutyDate: resolveActiveDutyDate(), stale: false, lastSuccessfulDate: resolveActiveDutyDate() };
         }
       } catch (err) {
-        if (isViewMissing(err)) {
-          return await queryDutyFallback(db, { ilSlug, ilceSlug });
-        }
-        throw err;
+        if (!isViewMissing(err)) throw err;
       }
-      return await queryDutyFallback(db, { ilSlug, ilceSlug });
+
+      // 2. VIEW missing or empty → fallback to duty_records
+      try {
+        return await queryDutyFallback(db, { ilSlug, ilceSlug });
+      } catch {
+        return { rows: [], dutyDate: resolveActiveDutyDate(), stale: true, lastSuccessfulDate: null };
+      }
     });
 
     const payload = buildDutyResponse(rows, dutyDate);
@@ -53,12 +57,15 @@ export default async function handler(req, res) {
         last_successful_update: lastSuccessfulDate ?? dutyDate ?? null,
         stale_minutes: null,
         recent_alert: null,
-        hint: "Güncel kayıt bulunamadı; son mevcut nöbet listesi gösteriliyor."
+        hint: rows.length
+          ? "Güncel kayıt bulunamadı; son mevcut nöbet listesi gösteriliyor."
+          : "Bu ilçe için bugün nöbet kaydı bulunamadı."
       };
     }
     await cacheSet(cacheKey, payload);
     return sendJson(res, 200, payload);
   } catch (error) {
-    return sendJson(res, 503, degradedPayload("Veritabanı erişilemiyor veya veri görünümü hazır değil."));
+    console.error("[duty/district]", ilSlug, ilceSlug, error?.message ?? error);
+    return sendJson(res, 200, degradedPayload("Nöbet verisi şu an alınamıyor. Lütfen daha sonra tekrar deneyin."));
   }
 }

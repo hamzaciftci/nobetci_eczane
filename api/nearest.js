@@ -64,9 +64,7 @@ export default async function handler(req, res) {
     await cacheSet(cacheKey, payload);
     return sendJson(res, 200, payload);
   } catch (error) {
-    if (isViewMissing(error)) {
-      return sendJson(res, 200, { status: "degraded", data: [] });
-    }
-    return sendJson(res, 503, degradedPayload("Veritabanı erişilemiyor veya veri görünümü hazır değil."));
+    console.error("[nearest]", error?.message ?? error);
+    return sendJson(res, 200, { status: "degraded", data: [] });
   }
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { MapPin, Loader2, AlertTriangle, Navigation } from "lucide-react";
+import { MapPin, Loader2, AlertTriangle } from "lucide-react";
 import { fetchNearest } from "@/lib/api";
 import MainLayout from "@/components/MainLayout";
 import PharmacyCard from "@/components/PharmacyCard";
+import MapPanel from "@/components/MapPanel";
 import { Button } from "@/components/ui/button";
 
 export default function NearestPharmacyPage() {
@@ -56,13 +57,12 @@ export default function NearestPharmacyPage() {
             </p>
           </motion.div>
 
-          {/* Map placeholder */}
-          <div className="mb-8 flex h-48 items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/30">
-            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-              <Navigation className="h-8 w-8" />
-              <span className="text-sm">Harita bileşeni buraya eklenecek</span>
+          {/* Map — shown once we have pharmacy results */}
+          {pharmacies && pharmacies.length > 0 && (
+            <div className="mb-8">
+              <MapPanel pharmacies={pharmacies} />
             </div>
-          </div>
+          )}
 
           {!coords && !geoError && (
             <div className="flex justify-center">

@@ -8,10 +8,9 @@ const adminToken = process.env.ADMIN_API_TOKEN ?? "";
 const results = [];
 
 async function run() {
-  await checkJson(`${apiBase}/health`, "health");
-  const ready = await checkJson(`${apiBase}/health/ready`, "health_ready");
-  if (!["ok", "degraded"].includes(String(ready.status))) {
-    throw new Error(`Unexpected readiness status: ${ready.status}`);
+  const health = await checkJson(`${apiBase}/api/health`, "health");
+  if (!health || health.ok !== true) {
+    throw new Error(`Health check failed: ${JSON.stringify(health)}`);
   }
 
   const provinces = await checkJson(`${apiBase}/api/iller`, "provinces");
@@ -24,11 +23,11 @@ async function run() {
     throw new Error("Duty payload has invalid schema");
   }
 
-  await checkJson(`${apiBase}/api/admin/ingestion/metrics`, "ingestion_metrics", adminToken);
+  await checkJson(`${apiBase}/api/admin/ingestion/overview`, "ingestion_overview", adminToken);
   await checkText(`${webBase}/`, "web_home");
   await checkText(`${webBase}/nobetci-${encodeURIComponent(city)}`, "web_legacy_nobetci_route");
-  await checkText(`${webBase}/nobetci-eczane/${encodeURIComponent(city)}/yazdir`, "web_a4_print");
-  await checkText(`${webBase}/nobetci-eczane/${encodeURIComponent(city)}/ekran`, "web_fullscreen_board");
+  await checkText(`${webBase}/il/${encodeURIComponent(city)}/yazdir`, "web_a4_print");
+  await checkText(`${webBase}/il/${encodeURIComponent(city)}/ekran`, "web_fullscreen_board");
 
   printResults(true);
 }

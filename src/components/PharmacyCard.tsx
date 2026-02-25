@@ -130,13 +130,24 @@ const PharmacyCard = ({ pharmacy, onReport, index = 0 }: PharmacyCardProps) => {
 
       {/* Action buttons */}
       <div className="flex border-t border-border">
-        <a
-          href={`tel:${pharmacy.phone.replace(/\s/g, "")}`}
-          className="flex flex-1 items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-        >
-          <Phone className="h-4 w-4" />
-          Ara
-        </a>
+        {pharmacy.phone ? (
+          <a
+            href={`tel:${pharmacy.phone.replace(/\s/g, "")}`}
+            className="flex flex-1 items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+            aria-label={`${pharmacy.name} eczanesini ara`}
+          >
+            <Phone className="h-4 w-4" />
+            Ara
+          </a>
+        ) : (
+          <span
+            className="flex flex-1 cursor-not-allowed items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-muted-foreground opacity-40"
+            title="Telefon numarası yok"
+          >
+            <Phone className="h-4 w-4" />
+            Ara
+          </span>
+        )}
         <a
           href={googleUrl}
           target="_blank"

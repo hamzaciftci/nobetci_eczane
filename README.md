@@ -15,6 +15,8 @@ Backend veri katmani Neon PostgreSQL uzerinden calisir.
 - `GET /api/admin/ingestion/alerts/open`
 - `POST /api/admin/ingestion/alerts/{id}/resolve`
 - `POST /api/admin/ingestion/recovery/{il}/trigger`
+- `GET /api/admin/ingestion/accuracy`
+- `POST /api/realtime-override/{province}/refresh`
 
 ## Kurulum
 

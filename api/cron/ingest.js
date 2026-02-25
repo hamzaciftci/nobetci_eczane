@@ -2,19 +2,31 @@
  * Vercel Cron: ingest duty pharmacies for all 81 provinces.
  *
  * Called once daily by vercel.json cron schedule.
- * Processes all provinces concurrently (Promise.allSettled) with per-province
- * timeouts handled inside ingestProvince itself.
+ * Processes provinces in batches of BATCH_SIZE concurrently so we stay
+ * well within the 60-second Vercel function limit:
+ *   ceil(81 / 25) = 4 batches × 11 s hard timeout ≈ 44 s worst-case.
+ *
+ * Each province also gets an 11-second hard timeout (separate from the
+ * 12-second HTTP fetch timeout inside ingestProvince) so a hung DB call
+ * cannot stall an entire batch.
  *
  * Auth: protected by CRON_SECRET header (set in Vercel env vars).
  */
 
 import { withDb } from "../_lib/db.js";
-import { ingestProvince } from "../_lib/ingest.js";
+import { ingestProvince, withTimeout, PROVINCE_TIMEOUT_MS, BATCH_SIZE } from "../_lib/ingest.js";
 import { sendJson } from "../_lib/http.js";
+import { logAlert } from "../_lib/ingest/loggingLayer.js";
 
+// Vercel hobby plan hard limit
 export const config = {
-  maxDuration: 60 // seconds (Vercel hobby max)
+  maxDuration: 60
 };
+
+/**
+ * Wraps a promise with a hard timeout.  If the promise does not settle
+ * within `ms` milliseconds it rejects with a timeout error.
+ */
 
 export default async function handler(req, res) {
   // Reject non-GET
@@ -23,13 +35,14 @@ export default async function handler(req, res) {
     return sendJson(res, 405, { error: "method_not_allowed" });
   }
 
-  // Verify Vercel cron secret (Vercel injects Authorization header automatically)
+  // Verify Vercel cron secret (mandatory)
   const cronSecret = (process.env.CRON_SECRET || "").trim();
-  if (cronSecret) {
-    const authHeader = String(req.headers["authorization"] || "");
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return sendJson(res, 401, { error: "unauthorized" });
-    }
+  if (!cronSecret) {
+    return sendJson(res, 401, { error: "missing_cron_secret" });
+  }
+  const authHeader = String(req.headers["authorization"] || "");
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return sendJson(res, 401, { error: "unauthorized" });
   }
 
   const startedAt = Date.now();
@@ -48,24 +61,49 @@ export default async function handler(req, res) {
 
     const slugs = provinces.map(r => r.slug);
 
-    // Run all provinces concurrently; collect results
+    // Chunk slugs into batches and process each batch concurrently.
+    // Sequential batches ensure we never have more than BATCH_SIZE
+    // simultaneous DB connections, and the total wall-clock time stays
+    // safely under the 60-second Vercel limit.
     const results = await withDb(async (sql) => {
-      const settled = await Promise.allSettled(
-        slugs.map(slug => ingestProvince(sql, slug))
-      );
+      const allResults = [];
 
-      return settled.map((s, i) =>
-        s.status === "fulfilled"
-          ? s.value
-          : { status: "error", il: slugs[i], error: s.reason?.message ?? "unknown" }
-      );
+      for (let i = 0; i < slugs.length; i += BATCH_SIZE) {
+        const batch = slugs.slice(i, i + BATCH_SIZE);
+
+        const settled = await Promise.allSettled(
+          batch.map(slug =>
+            withTimeout(ingestProvince(sql, slug), PROVINCE_TIMEOUT_MS, slug)
+          )
+        );
+
+        for (let j = 0; j < batch.length; j++) {
+          const s = settled[j];
+          allResults.push(
+            s.status === "fulfilled"
+              ? s.value
+              : { status: "error", il: batch[j], error: s.reason?.message ?? "unknown" }
+          );
+          if (s.status !== "fulfilled") {
+            await logAlert(sql, {
+              ilSlug: batch[j],
+              endpointId: null,
+              alertType: "timeout",
+              severity: "high",
+              message: s.reason?.message ?? "province_timeout"
+            });
+          }
+        }
+      }
+
+      return allResults;
     });
 
     const summary = {
-      total:     results.length,
-      success:   results.filter(r => r.status === "success").length,
-      partial:   results.filter(r => r.status === "partial").length,
-      failed:    results.filter(r => ["failed", "fetch_error", "no_data", "parse_error", "error", "no_endpoint"].includes(r.status)).length,
+      total:      results.length,
+      success:    results.filter(r => r.status === "success").length,
+      partial:    results.filter(r => r.status === "partial").length,
+      failed:     results.filter(r => ["failed", "fetch_error", "no_data", "parse_error", "error", "no_endpoint"].includes(r.status)).length,
       elapsed_ms: Date.now() - startedAt,
       results
     };

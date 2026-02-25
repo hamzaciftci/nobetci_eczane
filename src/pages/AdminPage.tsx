@@ -20,7 +20,7 @@ const AdminPage = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
+    const stored = window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
     const envValue = (import.meta.env.VITE_ADMIN_API_TOKEN ?? "").trim();
     setAdminToken(stored || envValue);
   }, []);
@@ -50,7 +50,7 @@ const AdminPage = () => {
   }, [fetchData]);
 
   const saveToken = () => {
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, adminToken.trim());
+    window.sessionStorage.setItem(TOKEN_STORAGE_KEY, adminToken.trim());
     toast({ title: "Admin token kaydedildi" });
     void fetchData();
   };

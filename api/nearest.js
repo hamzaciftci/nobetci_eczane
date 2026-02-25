@@ -1,6 +1,8 @@
 import { buildNearestResponse } from "./_lib/duty.js";
 import { withDb } from "./_lib/db.js";
-import { getSingleQueryValue, methodNotAllowed, sendInternalError, sendJson } from "./_lib/http.js";
+import { getSingleQueryValue, methodNotAllowed, sendJson } from "./_lib/http.js";
+import { degradedPayload, isViewMissing } from "./_lib/fallback.js";
+import { cacheGet, cacheSet, nearestKey } from "./_lib/cache.js";
 
 // Bounding box radius for pre-filter (kilometres)
 const RADIUS_KM = 50;
@@ -29,7 +31,14 @@ export default async function handler(req, res) {
   const minLng = lng - lngDelta;
   const maxLng = lng + lngDelta;
 
+  const cacheKey = nearestKey(lat, lng);
+
   try {
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return sendJson(res, 200, cached);
+    }
+
     const rows = await withDb((db) =>
       db`
         select
@@ -51,21 +60,13 @@ export default async function handler(req, res) {
       `
     );
 
-    return sendJson(res, 200, buildNearestResponse(rows));
+    const payload = buildNearestResponse(rows);
+    await cacheSet(cacheKey, payload);
+    return sendJson(res, 200, payload);
   } catch (error) {
     if (isViewMissing(error)) {
-      return sendJson(res, 503, {
-        status: "error",
-        message: "Canonical duty view not available"
-      });
+      return sendJson(res, 200, { status: "degraded", data: [] });
     }
-    return sendInternalError(res, error);
+    return sendJson(res, 503, degradedPayload("Veritabanı erişilemiyor veya veri görünümü hazır değil."));
   }
-}
-
-function isViewMissing(error) {
-  return (
-    error?.code === "42P01" ||
-    (typeof error?.message === "string" && error.message.includes("api_active_duty"))
-  );
 }

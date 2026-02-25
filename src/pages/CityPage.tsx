@@ -70,11 +70,11 @@ export default function CityPage() {
   const hasError = selectedDistrict ? districtQuery.isError && !districtQuery.data : provinceQuery.isError;
 
   const printHref = selectedDistrict
-    ? `/nobetci-eczane/${il}/${selectedDistrict}/yazdir`
-    : `/nobetci-eczane/${il}/yazdir`;
+    ? `/il/${il}/${selectedDistrict}/yazdir`
+    : `/il/${il}/yazdir`;
   const screenHref = selectedDistrict
-    ? `/nobetci-eczane/${il}/${selectedDistrict}/ekran`
-    : `/nobetci-eczane/${il}/ekran`;
+    ? `/il/${il}/${selectedDistrict}/ekran`
+    : `/il/${il}/ekran`;
 
   const handleDistrictSelect = useCallback(
     (slug: string | null) => {
@@ -152,7 +152,7 @@ export default function CityPage() {
         </div>
 
         {/* Degraded banner */}
-        {hasDegraded && sourceInfo.lastSuccessfulUpdate && (
+        {hasDegraded && (
           <div className="mb-6">
             <DegradedBanner lastSuccessful={sourceInfo.lastSuccessfulUpdate} onRetry={handleRefresh} />
           </div>

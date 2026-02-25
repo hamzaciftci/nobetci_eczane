@@ -7,6 +7,13 @@ export function isViewMissing(error) {
   );
 }
 
+/**
+ * VIEW'da veri yoksa (bugün henüz ingest yapılmadıysa) duty_records tablosunu
+ * doğrudan sorgular. Önce bugünü dener, yoksa en son mevcut tarihi döndürür.
+ *
+ * Şema: duty_records → pharmacies → districts → provinces
+ * (duty_records'ta province_id YOK — pharmacies üzerinden geçilir)
+ */
 export async function queryDutyFallback(db, { ilSlug, ilceSlug = null }) {
   const activeDate = resolveActiveDutyDate();
 
@@ -15,11 +22,14 @@ export async function queryDutyFallback(db, { ilSlug, ilceSlug = null }) {
     return { rows: rowsToday, dutyDate: activeDate, stale: false, lastSuccessfulDate: activeDate };
   }
 
+  // Bugüne ait veri yok → en son mevcut tarihi bul
   const latestRow = await db`
-    SELECT max(duty_date) AS duty_date
+    SELECT max(dr.duty_date) AS duty_date
     FROM duty_records dr
-    JOIN provinces p ON p.id = dr.province_id
-    WHERE p.slug = ${ilSlug}
+    JOIN pharmacies ph ON ph.id = dr.pharmacy_id
+    JOIN districts d    ON d.id  = ph.district_id
+    JOIN provinces pr   ON pr.id = d.province_id
+    WHERE pr.slug = ${ilSlug}
   `;
   const latestDate = latestRow[0]?.duty_date ? formatDate(latestRow[0].duty_date) : null;
   if (!latestDate) {
@@ -48,23 +58,25 @@ export function degradedPayload(message) {
 async function queryDutyDate(db, dutyDate, ilSlug, ilceSlug) {
   return db`
     SELECT
-      ph.canonical_name AS eczane_adi,
-      p.name            AS il,
+      ph.canonical_name  AS eczane_adi,
+      pr.name            AS il,
+      pr.slug            AS il_slug,
       coalesce(d.name, 'Merkez') AS ilce,
-      ph.address        AS adres,
-      ph.phone          AS telefon,
-      null::float       AS lat,
-      null::float       AS lng,
-      s.name            AS kaynak,
+      coalesce(d.slug, 'merkez') AS ilce_slug,
+      ph.address         AS adres,
+      ph.phone           AS telefon,
+      ph.lat::float      AS lat,
+      ph.lng::float      AS lng,
+      coalesce(s.name, 'Bilinmiyor') AS kaynak,
       coalesce(de.source_url, se.endpoint_url, '') AS kaynak_url,
-      dr.updated_at     AS son_guncelleme,
-      dr.confidence_score        AS dogruluk_puani,
+      dr.last_verified_at AS son_guncelleme,
+      dr.confidence_score          AS dogruluk_puani,
       dr.verification_source_count AS dogrulama_kaynagi_sayisi,
-      dr.is_degraded    AS is_degraded
+      dr.is_degraded     AS is_degraded
     FROM duty_records dr
-    JOIN pharmacies ph ON ph.id = dr.pharmacy_id
-    JOIN provinces p ON p.id = dr.province_id
-    LEFT JOIN districts d ON d.id = dr.district_id
+    JOIN pharmacies ph  ON ph.id = dr.pharmacy_id
+    JOIN districts d    ON d.id  = ph.district_id
+    JOIN provinces pr   ON pr.id = d.province_id
     LEFT JOIN LATERAL (
       SELECT de.source_id, de.source_url, de.seen_at
       FROM duty_evidence de
@@ -72,10 +84,10 @@ async function queryDutyDate(db, dutyDate, ilSlug, ilceSlug) {
       ORDER BY de.seen_at DESC
       LIMIT 1
     ) de ON true
-    LEFT JOIN sources s ON s.id = de.source_id
+    LEFT JOIN sources s          ON s.id  = de.source_id
     LEFT JOIN source_endpoints se ON se.source_id = s.id AND se.is_primary = true
     WHERE dr.duty_date = ${dutyDate}
-      AND p.slug = ${ilSlug}
+      AND pr.slug = ${ilSlug}
       ${ilceSlug ? db`AND d.slug = ${ilceSlug}` : db``}
     ORDER BY ilce, eczane_adi
   `;

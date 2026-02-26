@@ -27,6 +27,12 @@ export function parseHtmlPharmacies(html, parserKey = "generic_auto_v1") {
   const iconRows = iconUserMdParser(html);
   if (iconRows.length >= 1) return iconRows;
 
+  const teknoV1Rows = teknoEczaV1Parser(html);
+  if (teknoV1Rows.length >= 1) return teknoV1Rows;
+
+  const teknoV2Rows = teknoEczaV2Parser(html);
+  if (teknoV2Rows.length >= 1) return teknoV2Rows;
+
   const amasyaRows = eczaneIsmiParser(html);
   if (amasyaRows.length >= 1) return amasyaRows;
 
@@ -90,6 +96,9 @@ function dispatchParser(html, parserKey) {
   if (parserKey.includes("eczaneismi") || parserKey.includes("amasya")) return eczaneIsmiParser(html);
   if (parserKey.includes("trend_item") || parserKey.includes("isparta")) return trendItemParser(html);
   if (parserKey.includes("karaman") || parserKey.includes("vatan_hl")) return karamanParser(html);
+  if (parserKey.includes("teknoecza_v1") || parserKey.includes("teknoecza1")) return teknoEczaV1Parser(html);
+  if (parserKey.includes("teknoecza_v2") || parserKey.includes("teknoecza2")) return teknoEczaV2Parser(html);
+  if (parserKey.includes("konya_v1")) return konyaV1Parser(html);
   return [];
 }
 
@@ -303,16 +312,72 @@ function antalyaParser(html) {
   const re = /nobetciDiv[\s\S]{0,800}?href="tel:([^"]+)"[\s\S]{0,200}?href="tel:([^"]+)"/gi;
   let m;
   while ((m = re.exec(html)) !== null) {
-    const blockStart = Math.max(0, m.index - 200);
-    const block = html.slice(blockStart, m.index + 400);
-    const h4m = block.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i);
-    const name = h4m ? clean(stripTags(h4m[1])) : "";
-    const addressM = block.match(/fa-home[^>]*(?:><\/i>|>)\s*([\s\S]{3,400}?)(?:<br|<\/p|<i\s)/i);
-    const address = addressM ? clean(stripTags(addressM[1])) : "";
+    const matchStr = m[0]; // nobetciDiv … second tel href
+    const afterStr = html.slice(m.index + m[0].length, m.index + m[0].length + 800);
+    const fullBlock = matchStr + afterStr;
+
+    // Old format: name in <h4>; new format (aeo.org.tr): name as first tel-link text
+    const h4m = matchStr.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i);
+    let name = h4m ? clean(stripTags(h4m[1])) : "";
+    if (!name) {
+      const telNameM = matchStr.match(/<a href="tel:[^"]*">([^<]+)<\/a>/i);
+      if (telNameM) name = clean(telNameM[1]);
+    }
+
+    // Address: maps link (new format) or fa-home icon (old format)
+    let address = "";
+    const mapsM = fullBlock.match(/maps\.google\.com[^"]*"[^>]*class="nadres"[^>]*>([\s\S]{0,300}?)<\/a>/i);
+    if (mapsM) {
+      address = clean(stripTags(mapsM[1]));
+    } else {
+      const addrM = fullBlock.match(/fa-home[^>]*(?:><\/i>|>)\s*([\s\S]{3,400}?)(?:<br|<\/p|<i\s)/i);
+      if (addrM) address = clean(stripTags(addrM[1]));
+    }
+
     const phone = cleanPhone(m[1] || m[2]);
-    if (name.length >= 3) {
+    if (name && name.length >= 3) {
       results.push({ name, address, phone, district: "" });
     }
+  }
+  return results;
+}
+
+// ─── Strategy 9: TeknoEcza v1 — <a title="Nöbetçi Eczane">NAME</a> (Niğde) ─
+
+function teknoEczaV1Parser(html) {
+  if (!html.includes("N\u00f6bet\u00e7i Eczane")) return [];
+  const results = [];
+  // <a ... title="Nöbetçi Eczane">NAME</a> <span ...>(DISTRICT)</span>
+  const re = /title="N\u00f6bet\u00e7i Eczane"[^>]*>([^<]+)<\/a>[\s\S]{0,120}<span[^>]*>\(([^)]+)\)/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const name = clean(m[1]);
+    const district = m[2].trim();
+    if (name.length >= 3) results.push({ name, district, address: "", phone: "" });
+  }
+  if (results.length) return results;
+  // Fallback: no district span
+  const re2 = /title="N\u00f6bet\u00e7i Eczane"[^>]*>([^<]+)<\/a>/gi;
+  let m2;
+  while ((m2 = re2.exec(html)) !== null) {
+    const name = clean(m2[1]);
+    if (name.length >= 3) results.push({ name, district: "", address: "", phone: "" });
+  }
+  return results;
+}
+
+// ─── Strategy 10: TeknoEcza v2 — marquee <a href="nobetci-eczaneler"> (Aydın) ─
+
+function teknoEczaV2Parser(html) {
+  if (!html.includes('href="nobetci-eczaneler"')) return [];
+  const results = [];
+  // <a href="nobetci-eczaneler" title="Bugün...">NAME / <strong><small>DISTRICT</small>
+  const re = /href="nobetci-eczaneler"[^>]*title="Bug\u00fcn[^"]*"[^>]*>([^/<]+)\s*\/\s*<strong><small>([^<]+)<\/small>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const name = clean(m[1]);
+    const district = m[2].trim();
+    if (name.length >= 2) results.push({ name, district, address: "", phone: "" });
   }
   return results;
 }
@@ -450,5 +515,48 @@ function karamanParser(html) {
     }
   }
 
+  return results;
+}
+
+// ─── Strategy 11: Konya nested-table — direct TR/TD scan ─────────────────
+// konyanobetcieczaneleri.com uses nested <table> per address cell, breaking
+// the standard extractTables() regex. We scan all TRs from raw HTML instead.
+
+function konyaV1Parser(html) {
+  if (!html.includes("baslik_eczane") && !html.includes("konyanobetci")) return [];
+  const results = [];
+  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let m;
+  let nameCol = 1; // default: Eczane is usually col 1
+
+  while ((m = trRe.exec(html)) !== null) {
+    const cells = [];
+    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    let cm;
+    while ((cm = tdRe.exec(m[1])) !== null) {
+      cells.push(decodeEntities(stripTags(cm[1])).replace(/\s+/g, " ").trim());
+    }
+    if (cells.length < 2) continue;
+
+    // Header row: contains exact "Eczane" cell
+    if (cells.some(c => /^eczane$/i.test(c))) {
+      nameCol = cells.findIndex(c => /^eczane$/i.test(c));
+      continue;
+    }
+
+    if (cells.length <= nameCol) continue;
+    const name = cells[nameCol] ?? "";
+    if (name.length < 2) continue;
+    // Skip header-like or footer cells
+    if (/bugün|nöbetçi|eczaneler|hastalar|^adres$|^telefon$|^bölge$|bölge eczane/i.test(name)) continue;
+
+    const district = cells[0] ?? "";
+    results.push({
+      name: clean(name),
+      district: clean(district),
+      address: "",
+      phone: ""
+    });
+  }
   return results;
 }

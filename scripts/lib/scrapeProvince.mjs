@@ -9,6 +9,7 @@
 
 import {
   fetchIstanbulRows,
+  fetchOrduRows,
   fetchResource,
   FETCH_TIMEOUT_MS,
 } from "../../api/_lib/ingest/fetchLayer.js";
@@ -58,6 +59,20 @@ export async function scrapeProvince(ep, ilSlug) {
 // ─── Internal ─────────────────────────────────────────────────────────────
 
 async function _scrape(ep, ilSlug) {
+  // Ordu: eczanesistemi.net çoklu iframe akışı
+  if (ep.parser_key === "eczanesistemi_iframe_v1") {
+    const { rows, httpStatus, error } = await fetchOrduRows(ep.endpoint_url);
+    if (error && !rows.length) {
+      return { names: [], rawRows: [], httpStatus, error };
+    }
+    return {
+      names: rows.map((r) => r.name).filter(Boolean),
+      rawRows: rows,
+      httpStatus,
+      error: null,
+    };
+  }
+
   // İstanbul / Yalova: özel POST API akışı
   if (ep.parser_key === "istanbul_secondary_v1") {
     const { rows, httpStatus, error } = await fetchIstanbulRows(

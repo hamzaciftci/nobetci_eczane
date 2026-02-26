@@ -2,7 +2,7 @@
  * Orchestration layer for duty ingestion.
  * Splits concerns into fetch/parser/normalize/upsert/logging layers.
  */
-import { fetchIstanbulRows, fetchResource } from "./ingest/fetchLayer.js";
+import { fetchIstanbulRows, fetchOrduRows, fetchResource } from "./ingest/fetchLayer.js";
 import { detectAjaxApiUrl, parseHtmlPharmacies, parseJsonPharmacies } from "./ingest/parserLayer.js";
 import { upsertRows } from "./ingest/upsertLayer.js";
 import { logRun, logAlert } from "./ingest/loggingLayer.js";
@@ -51,6 +51,25 @@ export async function ingestProvince(sql, ilSlug) {
   }
 
   const ep = eps[0];
+
+  // Ordu eczanesistemi.net multi-iframe flow
+  if (ep.parser_key === "eczanesistemi_iframe_v1") {
+    const { rows, httpStatus, error } = await fetchOrduRows(ep.endpoint_url);
+    if (error && !rows.length) {
+      await logRun(sql, ep.endpoint_id, "failed", httpStatus ?? null, error, ilSlug);
+      await logAlert(sql, { ilSlug, endpointId: ep.endpoint_id, alertType: "fetch_error", severity: "high", message: error });
+      return { status: "fetch_error", il: ilSlug, found: 0, upserted: 0, error, elapsed_ms: Date.now() - started };
+    }
+    if (!rows.length) {
+      await logRun(sql, ep.endpoint_id, "partial", httpStatus ?? null, "no_pharmacies_in_iframes", ilSlug);
+      await logAlert(sql, { ilSlug, endpointId: ep.endpoint_id, alertType: "no_data", severity: "high", message: "ordu_flow_no_rows" });
+      return { status: "no_data", il: ilSlug, found: 0, upserted: 0, elapsed_ms: Date.now() - started };
+    }
+    const result = await upsertRows(sql, ep, ilSlug, rows, httpStatus, started);
+    await postIngestAlerts(sql, ep, result);
+    logStructured(ep.slug ?? ilSlug, result);
+    return result;
+  }
 
   // Istanbul/Yalova special flow
   if (ep.parser_key === "istanbul_secondary_v1") {

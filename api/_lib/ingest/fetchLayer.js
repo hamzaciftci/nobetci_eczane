@@ -69,6 +69,46 @@ export async function fetchResource(url) {
   }
 }
 
+// Ordu eczanesistemi.net multi-iframe helper
+export async function fetchOrduRows(endpointUrl) {
+  // Fetch main page → extract all eczanesistemi.net iframe URLs → fetch each → combine
+  let mainHtml, mainStatus;
+  try {
+    const page = await fetchResource(endpointUrl);
+    mainHtml = page.html ?? "";
+    mainStatus = page.status;
+  } catch (err) {
+    return { rows: [], httpStatus: null, error: `page_fetch: ${err.message}` };
+  }
+
+  const iframeUrls = [
+    ...new Set(
+      (mainHtml.match(/https?:\/\/[a-z]+\.eczanesistemi\.net\/list\/\d+/gi) ?? [])
+    )
+  ];
+  if (!iframeUrls.length) {
+    return { rows: [], httpStatus: mainStatus, error: "eczanesistemi_no_iframes" };
+  }
+
+  const allRows = [];
+  for (const url of iframeUrls) {
+    try {
+      const r = await fetchResource(url);
+      const rHtml = r.html ?? "";
+      const re = /<a href="https:\/\/maps\.google\.com[^"]*"[^>]*style="[^"]*font-weight:bold[^"]*"[^>]*>([^<]+)<\/a>/gi;
+      let m;
+      while ((m = re.exec(rHtml)) !== null) {
+        const name = m[1].trim().replace(/^(?:GÜNDÜZ-GECE|GECE|GÜNDÜZ)\s*[:\s]+/i, "").trim();
+        if (name.length >= 3) allRows.push({ name, district: "", address: "", phone: "" });
+      }
+    } catch {
+      /* skip individual list failures */
+    }
+  }
+
+  return { rows: allRows, httpStatus: mainStatus, error: null };
+}
+
 // Istanbul / Yalova POST API helper
 export async function fetchIstanbulRows(endpointUrl, ilSlug) {
   let pageHtml, pageStatus;

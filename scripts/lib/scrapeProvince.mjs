@@ -8,6 +8,7 @@
  */
 
 import {
+  fetchAnkaraRows,
   fetchIstanbulRows,
   fetchOrduRows,
   fetchResource,
@@ -59,6 +60,20 @@ export async function scrapeProvince(ep, ilSlug) {
 // ─── Internal ─────────────────────────────────────────────────────────────
 
 async function _scrape(ep, ilSlug) {
+  // Ankara: aeo.org.tr getPharmacies AJAX akışı
+  if (ep.parser_key === "ankara_ajax_v1") {
+    const { rows, httpStatus, error } = await fetchAnkaraRows(ep.endpoint_url);
+    if (error && !rows.length) {
+      return { names: [], rawRows: [], httpStatus, error };
+    }
+    return {
+      names: rows.map((r) => r.name).filter(Boolean),
+      rawRows: rows,
+      httpStatus,
+      error: null,
+    };
+  }
+
   // Ordu: eczanesistemi.net çoklu iframe akışı
   if (ep.parser_key === "eczanesistemi_iframe_v1") {
     const { rows, httpStatus, error } = await fetchOrduRows(ep.endpoint_url);

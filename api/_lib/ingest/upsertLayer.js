@@ -14,6 +14,7 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   let upserted = 0;
   const errors = [];
   const seenDistricts = new Set();
+  const upsertedPharmacyIds = [];
 
   for (const row of rows) {
     try {
@@ -53,6 +54,7 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
       `;
 
       seenDistricts.add(districtId);
+      upsertedPharmacyIds.push(ph.id);
 
       const [dr] = await sql`
         INSERT INTO duty_records (
@@ -99,6 +101,21 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
       upserted++;
     } catch (err) {
       errors.push(`${row.name}: ${err.message.slice(0, 80)}`);
+    }
+  }
+
+  // Stale duty_records temizle: bu il için bugün DB'de olup artık
+  // canlı kaynakta bulunmayan kayıtları sil (tam başarılı ingest'te).
+  if (upserted === rows.length && upsertedPharmacyIds.length > 0) {
+    try {
+      await sql`
+        DELETE FROM duty_records
+        WHERE province_id = ${ep.province_id}
+          AND duty_date   = ${today}
+          AND pharmacy_id != ALL(${upsertedPharmacyIds})
+      `;
+    } catch {
+      /* stale cleanup hatası ingest'i durdurmasın */
     }
   }
 

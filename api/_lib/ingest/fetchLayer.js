@@ -1,4 +1,5 @@
 import { cleanPhone } from "./utils.js";
+import { resolveToday } from "./normalizeLayer.js";
 
 export const FETCH_TIMEOUT_MS = 10_000;
 export const CRAWL_UA =
@@ -107,6 +108,63 @@ export async function fetchOrduRows(endpointUrl) {
   }
 
   return { rows: allRows, httpStatus: mainStatus, error: null };
+}
+
+// Ankara aeo.org.tr getPharmacies AJAX helper
+export async function fetchAnkaraRows(baseUrl) {
+  const today = resolveToday();
+  const origin = new URL(baseUrl).origin;
+  const ajaxUrl = `${origin}/getPharmacies/${today}`;
+
+  let html, httpStatus;
+  try {
+    const r = await fetchResource(ajaxUrl);
+    html = r.html ?? "";
+    httpStatus = r.status;
+  } catch (err) {
+    return { rows: [], httpStatus: null, error: `ajax_fetch: ${err.message}` };
+  }
+
+  if (!html) {
+    return { rows: [], httpStatus, error: "empty_ajax_response" };
+  }
+
+  const rows = [];
+  const re = /data-name="([^"]+)"\s+data-district="([^"]+)"/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const name = m[1].trim();
+    const district = m[2].trim();
+    if (name.length < 3) continue;
+
+    // Adres ve telefon: <h4>NAME</h4> ve <p>... <span>PHONE</span></p>
+    const nextIdx = html.indexOf("data-name=", m.index + 10);
+    const section = html.slice(m.index, nextIdx >= 0 ? nextIdx : m.index + 3000);
+
+    const h4m = section.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i);
+    const canonicalName = h4m
+      ? h4m[1].replace(/<[^>]+>/g, "").trim()
+      : name;
+
+    const pm = section.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+    let address = "", phone = "";
+    if (pm) {
+      const pHtml = pm[1].replace(/<svg[\s\S]*?<\/svg>/gi, "");
+      const spanM = pHtml.match(/<span[^>]*>([0-9 ()+-]{7,})<\/span>/i);
+      const telM  = pHtml.match(/href="tel:([^"]+)"/i);
+      phone = cleanPhone((spanM ?? telM)?.[1] ?? "");
+      address = pHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (phone) address = address.replace(phone, "").trim();
+    }
+
+    rows.push({ name: canonicalName || name, district, address, phone });
+  }
+
+  if (!rows.length) {
+    return { rows: [], httpStatus, error: "no_inline_box_data" };
+  }
+
+  return { rows, httpStatus, error: null };
 }
 
 // Istanbul / Yalova POST API helper

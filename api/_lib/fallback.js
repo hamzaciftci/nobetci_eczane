@@ -12,7 +12,6 @@ export function isViewMissing(error) {
  * doğrudan sorgular. Önce bugünü dener, yoksa en son mevcut tarihi döndürür.
  *
  * Şema: duty_records → pharmacies → districts → provinces
- * (duty_records'ta province_id YOK — pharmacies üzerinden geçilir)
  */
 export async function queryDutyFallback(db, { ilSlug, ilceSlug = null }) {
   const activeDate = resolveActiveDutyDate();
@@ -55,7 +54,44 @@ export function degradedPayload(message) {
   };
 }
 
+// neon client nested template literal desteklemez — ilceSlug için ayrı sorgu kullanılır.
 async function queryDutyDate(db, dutyDate, ilSlug, ilceSlug) {
+  if (ilceSlug) {
+    return db`
+      SELECT
+        ph.canonical_name  AS eczane_adi,
+        pr.name            AS il,
+        pr.slug            AS il_slug,
+        coalesce(d.name, 'Merkez') AS ilce,
+        coalesce(d.slug, 'merkez') AS ilce_slug,
+        ph.address         AS adres,
+        ph.phone           AS telefon,
+        ph.lat::float      AS lat,
+        ph.lng::float      AS lng,
+        coalesce(s.name, 'Bilinmiyor') AS kaynak,
+        coalesce(de.source_url, '') AS kaynak_url,
+        dr.last_verified_at AS son_guncelleme,
+        dr.confidence_score          AS dogruluk_puani,
+        dr.verification_source_count AS dogrulama_kaynagi_sayisi,
+        dr.is_degraded     AS is_degraded
+      FROM duty_records dr
+      JOIN pharmacies ph  ON ph.id = dr.pharmacy_id
+      JOIN districts d    ON d.id  = ph.district_id
+      JOIN provinces pr   ON pr.id = d.province_id
+      LEFT JOIN LATERAL (
+        SELECT de.source_id, de.source_url, de.seen_at
+        FROM duty_evidence de
+        WHERE de.duty_record_id = dr.id
+        ORDER BY de.seen_at DESC
+        LIMIT 1
+      ) de ON true
+      LEFT JOIN sources s ON s.id = de.source_id
+      WHERE dr.duty_date = ${dutyDate}
+        AND pr.slug = ${ilSlug}
+        AND d.slug = ${ilceSlug}
+      ORDER BY ilce, eczane_adi
+    `;
+  }
   return db`
     SELECT
       ph.canonical_name  AS eczane_adi,
@@ -68,7 +104,7 @@ async function queryDutyDate(db, dutyDate, ilSlug, ilceSlug) {
       ph.lat::float      AS lat,
       ph.lng::float      AS lng,
       coalesce(s.name, 'Bilinmiyor') AS kaynak,
-      coalesce(de.source_url, se.endpoint_url, '') AS kaynak_url,
+      coalesce(de.source_url, '') AS kaynak_url,
       dr.last_verified_at AS son_guncelleme,
       dr.confidence_score          AS dogruluk_puani,
       dr.verification_source_count AS dogrulama_kaynagi_sayisi,
@@ -84,11 +120,9 @@ async function queryDutyDate(db, dutyDate, ilSlug, ilceSlug) {
       ORDER BY de.seen_at DESC
       LIMIT 1
     ) de ON true
-    LEFT JOIN sources s          ON s.id  = de.source_id
-    LEFT JOIN source_endpoints se ON se.source_id = s.id AND se.is_primary = true
+    LEFT JOIN sources s ON s.id = de.source_id
     WHERE dr.duty_date = ${dutyDate}
       AND pr.slug = ${ilSlug}
-      ${ilceSlug ? db`AND d.slug = ${ilceSlug}` : db``}
     ORDER BY ilce, eczane_adi
   `;
 }

@@ -132,3 +132,11 @@ function formatDate(value) {
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString().slice(0, 10);
 }
+
+/**
+ * Belirli bir tarih için doğrudan duty_records sorgular (view bypass).
+ * Geçmiş / gelecek tarih sorgularında kullanılır.
+ */
+export async function queryDutyForDate(db, { ilSlug, ilceSlug = null, date }) {
+  return queryDutyDate(db, date, ilSlug, ilceSlug);
+}

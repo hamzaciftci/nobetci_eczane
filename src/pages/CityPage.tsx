@@ -16,34 +16,73 @@ import ReportModal from "@/components/ReportModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pharmacy } from "@/types/pharmacy";
-import { extractDistricts, fetchDutyByDistrict, fetchDutyByProvince } from "@/lib/api";
+import { extractDistricts, fetchDutyByDistrict, fetchDutyByProvince, fetchDutyDates } from "@/lib/api";
 import { findProvince } from "@/lib/cities";
+
+// Istanbul UTC+3 (DST yok) — duty 08:00'de değişir
+function getActiveDutyDate(): string {
+  const now = new Date();
+  const istMs = now.getTime() + 3 * 60 * 60 * 1000;
+  const ist = new Date(istMs);
+  const duty = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
+  if (ist.getUTCHours() < 8) duty.setUTCDate(duty.getUTCDate() - 1);
+  return duty.toISOString().slice(0, 10);
+}
+
+const TR_DAYS = ["Paz", "Pzt", "Sal", "Çrş", "Prş", "Cum", "Cmt"];
+const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+
+function formatDayTab(dateStr: string, todayDutyDate: string): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  const dayName = TR_DAYS[d.getUTCDay()];
+  const dayNum = d.getUTCDate();
+  const monthName = TR_MONTHS[d.getUTCMonth()];
+  if (dateStr === todayDutyDate) return `${dayName} ${dayNum} ${monthName} · Bugün`;
+  return `${dayName} ${dayNum} ${monthName}`;
+}
 
 export default function CityPage() {
   const { il, ilce } = useParams<{ il: string; ilce?: string }>();
   const navigate = useNavigate();
   const province = findProvince(il || "");
 
+  const TODAY_DUTY = getActiveDutyDate();
+
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(ilce || null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null); // null = bugün
   const [reportTarget, setReportTarget] = useState<Pharmacy | null>(null);
   const [showMap, setShowMap] = useState(false);
 
+  // İl değişince tarihi ve ilçeyi sıfırla
   useEffect(() => {
     setSelectedDistrict(ilce || null);
-  }, [ilce, il]);
+    setSelectedDate(null);
+  }, [il, ilce]);
+
+  // Aktif tarih: null → TODAY_DUTY, başka bir değer → o tarih
+  const activeTarih = selectedDate ?? TODAY_DUTY;
+  // Bugün (view sorgusu) için tarih parametresi gönderilmez; API kendi TODAY'ı kullanır
+  const tarihParam = selectedDate; // null = bugün (param göndermiyoruz)
 
   const provinceQuery = useQuery({
-    queryKey: ["duty", il],
-    queryFn: () => fetchDutyByProvince(il || ""),
+    queryKey: ["duty", il, tarihParam ?? "today"],
+    queryFn: () => fetchDutyByProvince(il || "", tarihParam ?? undefined),
     enabled: Boolean(il),
-    staleTime: 1000 * 60,
+    staleTime: tarihParam ? 1000 * 60 * 60 : 1000 * 60,
   });
 
   const districtQuery = useQuery({
-    queryKey: ["duty", il, selectedDistrict],
-    queryFn: () => fetchDutyByDistrict(il || "", selectedDistrict || ""),
+    queryKey: ["duty", il, selectedDistrict, tarihParam ?? "today"],
+    queryFn: () => fetchDutyByDistrict(il || "", selectedDistrict || "", tarihParam ?? undefined),
     enabled: Boolean(il && selectedDistrict),
-    staleTime: 1000 * 60,
+    staleTime: tarihParam ? 1000 * 60 * 60 : 1000 * 60,
+  });
+
+  const datesQuery = useQuery({
+    queryKey: ["tarihler", il],
+    queryFn: () => fetchDutyDates(il || ""),
+    enabled: Boolean(il),
+    staleTime: 1000 * 60 * 5,
   });
 
   const activeDuty = selectedDistrict ? districtQuery.data : provinceQuery.data;
@@ -83,7 +122,11 @@ export default function CityPage() {
     if (selectedDistrict) void districtQuery.refetch();
   }, [provinceQuery, districtQuery, selectedDistrict]);
 
-  const today = new Date().toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const availableDates = datesQuery.data ?? [];
+  // Gösterilecek tarih metni: header'da
+  const displayDate = new Date(activeTarih + "T00:00:00Z").toLocaleDateString("tr-TR", {
+    day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC"
+  });
 
   return (
     <MainLayout>
@@ -115,7 +158,7 @@ export default function CityPage() {
               {selectedDistrict ? `${selectedDistrictName}, ` : ""}{cityName} NÖBETÇİ ECZANELER
             </h1>
             <p className="mt-3 text-center text-sm text-muted-foreground">
-              Tarih: {today}
+              Tarih: {displayDate}
               {activeDuty && (
                 <> · Son güncelleme:{" "}
                   {new Date(activeDuty.son_guncelleme ?? Date.now()).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
@@ -141,7 +184,32 @@ export default function CityPage() {
           </div>
         </div>
 
-        {/* District filter — en üstte */}
+        {/* Nöbet günü seçici — birden fazla tarih varsa göster */}
+        {availableDates.length > 1 && (
+          <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">
+            <h2 className="mb-3 text-base font-bold text-foreground">Nöbet Günü</h2>
+            <div className="flex flex-wrap gap-2">
+              {availableDates.map((date) => {
+                const isActive = date === activeTarih;
+                return (
+                  <button
+                    key={date}
+                    onClick={() => setSelectedDate(date === TODAY_DUTY ? null : date)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "border border-border bg-surface text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    }`}
+                  >
+                    {formatDayTab(date, TODAY_DUTY)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* District filter */}
         {districts.length > 0 && (
           <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">
             <h2 className="mb-3 text-base font-bold text-foreground">İlçe Filtresi</h2>

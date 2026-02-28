@@ -1,9 +1,12 @@
 import { buildDutyResponse } from "../../_lib/duty.js";
 import { withDb } from "../../_lib/db.js";
 import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../_lib/http.js";
-import { queryDutyFallback, degradedPayload, isViewMissing } from "../../_lib/fallback.js";
+import { queryDutyFallback, queryDutyForDate, degradedPayload, isViewMissing } from "../../_lib/fallback.js";
 import { resolveActiveDutyDate } from "../../_lib/time.js";
-import { cacheGet, cacheSet, dutyProvinceKey, TTL_DEGRADED_SECONDS } from "../../_lib/cache.js";
+import {
+  cacheGet, cacheSet, dutyProvinceKey, dutyProvinceDateKey,
+  TTL_DEGRADED_SECONDS, TTL_HISTORICAL_SECONDS
+} from "../../_lib/cache.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -15,10 +18,32 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: "invalid_il" });
   }
 
-  const cacheKey = dutyProvinceKey(ilSlug);
+  const tarih = getSingleQueryValue(req.query.tarih || "").trim() || null;
+  const TODAY = resolveActiveDutyDate();
 
-  // Vercel edge / CDN katmanının bu yanıtı önbelleğe almasını engelle.
   res.setHeader("Cache-Control", "no-store");
+
+  // Geçmiş / gelecek tarih sorgusu: view bypass → duty_records doğrudan
+  if (tarih && tarih !== TODAY) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) {
+      return sendJson(res, 400, { error: "invalid_tarih" });
+    }
+    const cacheKey = dutyProvinceDateKey(ilSlug, tarih);
+    try {
+      const cached = await cacheGet(cacheKey);
+      if (cached) return sendJson(res, 200, cached);
+
+      const rows = await withDb((db) => queryDutyForDate(db, { ilSlug, date: tarih }));
+      const payload = buildDutyResponse(rows, tarih);
+      await cacheSet(cacheKey, payload, TTL_HISTORICAL_SECONDS);
+      return sendJson(res, 200, payload);
+    } catch (err) {
+      console.error("[duty/province/tarih]", ilSlug, tarih, err?.message ?? err);
+      return sendJson(res, 200, degradedPayload("Nöbet verisi şu an alınamıyor."));
+    }
+  }
+
+  const cacheKey = dutyProvinceKey(ilSlug);
 
   try {
     const cached = await cacheGet(cacheKey);

@@ -1,9 +1,12 @@
 import { buildDutyResponse } from "../../../_lib/duty.js";
 import { withDb } from "../../../_lib/db.js";
 import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../../_lib/http.js";
-import { queryDutyFallback, degradedPayload, isViewMissing } from "../../../_lib/fallback.js";
+import { queryDutyFallback, queryDutyForDate, degradedPayload, isViewMissing } from "../../../_lib/fallback.js";
 import { resolveActiveDutyDate } from "../../../_lib/time.js";
-import { cacheGet, cacheSet, dutyDistrictKey, TTL_DEGRADED_SECONDS } from "../../../_lib/cache.js";
+import {
+  cacheGet, cacheSet, dutyDistrictKey, dutyDistrictDateKey,
+  TTL_DEGRADED_SECONDS, TTL_HISTORICAL_SECONDS
+} from "../../../_lib/cache.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -17,9 +20,31 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: "invalid_il_or_ilce" });
   }
 
-  const cacheKey = dutyDistrictKey(ilSlug, ilceSlug);
+  const tarih = getSingleQueryValue(req.query.tarih || "").trim() || null;
+  const TODAY = resolveActiveDutyDate();
 
   res.setHeader("Cache-Control", "no-store");
+
+  if (tarih && tarih !== TODAY) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) {
+      return sendJson(res, 400, { error: "invalid_tarih" });
+    }
+    const cacheKey = dutyDistrictDateKey(ilSlug, ilceSlug, tarih);
+    try {
+      const cached = await cacheGet(cacheKey);
+      if (cached) return sendJson(res, 200, cached);
+
+      const rows = await withDb((db) => queryDutyForDate(db, { ilSlug, ilceSlug, date: tarih }));
+      const payload = buildDutyResponse(rows, tarih);
+      await cacheSet(cacheKey, payload, TTL_HISTORICAL_SECONDS);
+      return sendJson(res, 200, payload);
+    } catch (err) {
+      console.error("[duty/district/tarih]", ilSlug, ilceSlug, tarih, err?.message ?? err);
+      return sendJson(res, 200, degradedPayload("Nöbet verisi şu an alınamıyor."));
+    }
+  }
+
+  const cacheKey = dutyDistrictKey(ilSlug, ilceSlug);
 
   try {
     const cached = await cacheGet(cacheKey);

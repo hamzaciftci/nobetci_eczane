@@ -13,8 +13,9 @@ function getRedisClient() {
   return clientPromise;
 }
 
-export const TTL_SECONDS = 600;         // Normal veri: 10 dakika
-export const TTL_DEGRADED_SECONDS = 30; // Stale/degraded veri: 30 sn → sık retry
+export const TTL_SECONDS = 600;              // Normal veri: 10 dakika
+export const TTL_DEGRADED_SECONDS = 30;      // Stale/degraded veri: 30 sn → sık retry
+export const TTL_HISTORICAL_SECONDS = 21600; // Geçmiş tarih: 6 saat (veri artık değişmez)
 
 export async function cacheGet(key) {
   const client = getRedisClient();
@@ -67,4 +68,17 @@ export function dutyDistrictKey(ilSlug, ilceSlug) {
 export function nearestKey(lat, lng) {
   // Round to 2 decimal places (~1.1 km precision) for better cache hit rate
   return `nearest:${Math.round(lat * 100) / 100}:${Math.round(lng * 100) / 100}`;
+}
+
+// Tarih bazlı cache anahtarları (geçmiş gün sorguları için)
+export function dutyProvinceDateKey(ilSlug, date) {
+  return `duty:${ilSlug}:${date}`;
+}
+
+export function dutyDistrictDateKey(ilSlug, ilceSlug, date) {
+  return `duty:${ilSlug}:${ilceSlug}:${date}`;
+}
+
+export function dutyDatesKey(ilSlug) {
+  return `tarihler:${ilSlug}`;
 }

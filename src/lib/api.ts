@@ -71,14 +71,21 @@ export async function fetchCities(): Promise<City[]> {
   }));
 }
 
-export async function fetchDutyByProvince(il: string): Promise<DutyPayload> {
-  const payload = await requestJson<DutyResponseDto>(`/api/il/${encodeURIComponent(il)}/nobetci`);
+export async function fetchDutyByProvince(il: string, tarih?: string): Promise<DutyPayload> {
+  const qs = tarih ? `?tarih=${encodeURIComponent(tarih)}` : "";
+  const payload = await requestJson<DutyResponseDto>(`/api/il/${encodeURIComponent(il)}/nobetci${qs}`);
   return mapDutyPayload(payload);
 }
 
-export async function fetchDutyByDistrict(il: string, ilce: string): Promise<DutyPayload> {
-  const payload = await requestJson<DutyResponseDto>(`/api/il/${encodeURIComponent(il)}/${encodeURIComponent(ilce)}/nobetci`);
+export async function fetchDutyByDistrict(il: string, ilce: string, tarih?: string): Promise<DutyPayload> {
+  const qs = tarih ? `?tarih=${encodeURIComponent(tarih)}` : "";
+  const payload = await requestJson<DutyResponseDto>(`/api/il/${encodeURIComponent(il)}/${encodeURIComponent(ilce)}/nobetci${qs}`);
   return mapDutyPayload(payload);
+}
+
+export async function fetchDutyDates(il: string): Promise<string[]> {
+  const payload = await requestJson<{ dates: string[] }>(`/api/il/${encodeURIComponent(il)}/tarihler`);
+  return payload.dates;
 }
 
 export async function fetchNearest(lat: number, lng: number): Promise<Pharmacy[]> {

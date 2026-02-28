@@ -2,15 +2,14 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ChevronRight, AlertCircle, MapPin, ShieldCheck, Printer,
-  Monitor, Loader2, MapPinned, Navigation, Info
+  ChevronRight, MapPin, ShieldCheck, Printer,
+  Monitor, MapPinned, Navigation, Info
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/MainLayout";
 import PharmacyCard from "@/components/PharmacyCard";
 import MapPanel from "@/components/MapPanel";
 import DegradedBanner from "@/components/DegradedBanner";
-import SourcePanel from "@/components/SourcePanel";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorState from "@/components/ErrorState";
 import { PharmacySkeletonList } from "@/components/PharmacySkeleton";
@@ -18,7 +17,7 @@ import ReportModal from "@/components/ReportModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pharmacy } from "@/types/pharmacy";
-import { buildSourceInfo, extractDistricts, fetchDutyByDistrict, fetchDutyByProvince } from "@/lib/api";
+import { extractDistricts, fetchDutyByDistrict, fetchDutyByProvince } from "@/lib/api";
 import { findProvince } from "@/lib/cities";
 
 export default function CityPage() {
@@ -57,13 +56,6 @@ export default function CityPage() {
   const cityName = activeDuty?.data[0]?.city ?? province?.name ?? titleFromSlug(il || "");
   const selectedDistrictName =
     districts.find((d) => d.slug === selectedDistrict)?.name ?? titleFromSlug(selectedDistrict || "");
-  const sourceInfo = useMemo(
-    () =>
-      activeDuty
-        ? buildSourceInfo(activeDuty)
-        : { name: "Bilinmiyor", url: null, lastUpdated: new Date().toISOString(), verificationCount: 0, status: "normal" as const },
-    [activeDuty]
-  );
 
   const hasDegraded = (activeDuty?.status ?? "ok") === "degraded";
   const isLoading = provinceQuery.isLoading || (Boolean(selectedDistrict) && districtQuery.isLoading);
@@ -154,38 +146,11 @@ export default function CityPage() {
         {/* Degraded banner */}
         {hasDegraded && (
           <div className="mb-6">
-            <DegradedBanner lastSuccessful={sourceInfo.lastSuccessfulUpdate} onRetry={handleRefresh} />
+            <DegradedBanner lastSuccessful={activeDuty?.degraded_info?.last_successful_update ?? undefined} onRetry={handleRefresh} />
           </div>
         )}
 
-        {/* Source panel */}
-        <div className="mb-6">
-          <SourcePanel sourceInfo={sourceInfo} onRefresh={handleRefresh} />
-        </div>
-
-        {/* Display modes */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">
-          <h2 className="mb-2 text-base font-bold text-foreground">Gösterim Seçenekleri</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Eczane camına asmak için A4 çıktı alın veya canlı panosunu tam ekranda açın.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link to={printHref}>
-              <Button size="default" className="gap-2 rounded-xl">
-                <Printer className="h-4 w-4" />
-                A4 Çıktı
-              </Button>
-            </Link>
-            <Link to={screenHref}>
-              <Button variant="outline" size="default" className="gap-2 rounded-xl">
-                <Monitor className="h-4 w-4" />
-                Tam Ekran
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* District filter */}
+        {/* District filter — en üstte */}
         {districts.length > 0 && (
           <div className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">
             <h2 className="mb-3 text-base font-bold text-foreground">İlçe Filtresi</h2>
@@ -216,23 +181,6 @@ export default function CityPage() {
             </div>
           </div>
         )}
-
-        {/* Nearest pharmacy CTA */}
-        <div className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-card">
-          <h2 className="mb-2 text-base font-bold text-foreground">En Yakın Nöbetçi Eczane</h2>
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">
-              <strong>KVKK:</strong> Konumunuz sunucuya gönderilmez. Mesafe hesabı tarayıcıda yapılır.
-            </p>
-          </div>
-          <Link to="/en-yakin">
-            <Button className="gap-2 rounded-xl">
-              <Navigation className="h-4 w-4" />
-              Konuma Göre Bul
-            </Button>
-          </Link>
-        </div>
 
         {/* Map toggle (mobile) */}
         <button
@@ -286,6 +234,45 @@ export default function CityPage() {
             </div>
           )}
         </ErrorBoundary>
+
+        {/* Display modes */}
+        <div className="mt-8 mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">
+          <h2 className="mb-2 text-base font-bold text-foreground">Gösterim Seçenekleri</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Eczane camına asmak için A4 çıktı alın veya canlı panosunu tam ekranda açın.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link to={printHref}>
+              <Button size="default" className="gap-2 rounded-xl">
+                <Printer className="h-4 w-4" />
+                A4 Çıktı
+              </Button>
+            </Link>
+            <Link to={screenHref}>
+              <Button variant="outline" size="default" className="gap-2 rounded-xl">
+                <Monitor className="h-4 w-4" />
+                Tam Ekran
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Nearest pharmacy CTA */}
+        <div className="mb-8 rounded-2xl border border-border bg-card p-5 shadow-card">
+          <h2 className="mb-2 text-base font-bold text-foreground">En Yakın Nöbetçi Eczane</h2>
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              <strong>KVKK:</strong> Konumunuz sunucuya gönderilmez. Mesafe hesabı tarayıcıda yapılır.
+            </p>
+          </div>
+          <Link to="/en-yakin">
+            <Button className="gap-2 rounded-xl">
+              <Navigation className="h-4 w-4" />
+              Konuma Göre Bul
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {reportTarget && <ReportModal pharmacy={reportTarget} onClose={() => setReportTarget(null)} />}

@@ -13,10 +13,11 @@ export default function NearestPharmacyPage() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
 
-  const { data: pharmacies, isLoading } = useQuery({
+  const { data: pharmacies, isLoading, isError, refetch } = useQuery({
     queryKey: ["nearest", coords?.lat, coords?.lng],
     queryFn: () => fetchNearest(coords!.lat, coords!.lng),
     enabled: !!coords,
+    retry: 1,
   });
 
   const requestLocation = () => {
@@ -32,7 +33,8 @@ export default function NearestPharmacyPage() {
           "Konum izni verilmedi. En yakın eczaneyi gösterebilmemiz için tarayıcıya konum izni vermeniz gerekiyor."
         );
         setRequesting(false);
-      }
+      },
+      { timeout: 10000, enableHighAccuracy: false }
     );
   };
 
@@ -103,6 +105,25 @@ export default function NearestPharmacyPage() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          )}
+
+          {isError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-8 flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4"
+            >
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Eczaneler yüklenemedi</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Bir bağlantı hatası oluştu. Lütfen tekrar deneyin.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-3">
+                  Tekrar Dene
+                </Button>
+              </div>
+            </motion.div>
           )}
 
           {pharmacies && pharmacies.length === 0 && (

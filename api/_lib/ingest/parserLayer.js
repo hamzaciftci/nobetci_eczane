@@ -1,6 +1,16 @@
 import { normalizeText, resolveToday } from "./normalizeLayer.js";
 import { clean, cleanPhone, decodeEntities, stripTags } from "./utils.js";
 
+// ─── Koordinat çıkarıcı ────────────────────────────────────────────────────
+// Google Maps href'inden ?q=lat,lng koordinatlarını ayıklar.
+function extractCoords(html) {
+  const m = html.match(
+    /href="https?:\/\/(?:maps\.google\.com|www\.google\.com\/maps)[^"]*[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/i
+  );
+  if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  return null;
+}
+
 /** Main HTML parse entry point — dispatches on parserKey, then auto-detects. */
 export function parseHtmlPharmacies(html, parserKey = "generic_auto_v1") {
   if (!html) return [];
@@ -200,8 +210,10 @@ function inlineBoxParser(html) {
       address = clean(stripped.replace(phone, "").replace(/\s{2,}/g, " "));
     }
 
+    const coords = extractCoords(section);
+
     if (name.length >= 3) {
-      results.push({ name, address, phone, district: rawDistrict });
+      results.push({ name, address, phone, district: rawDistrict, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
     }
   }
   return results;
@@ -282,7 +294,10 @@ function cardParser(html) {
     }
 
     let address = "";
-    const homeM = section.match(/(?:fa-home|icon-home)[^>]*(?:><\/i>|>)\s*([\s\S]{3,400}?)(?:<br\s*\/?>|<a\s|<\/p|<i\s)/i);
+    // Capture full address block from fa-home to next fa- icon (includes description line after <br>)
+    const homeM =
+      section.match(/fa-(?:home|address-card)[^>]*(?:><\/i>|>)\s*([\s\S]{3,600}?)(?=<i\s[^>]*fa-(?:phone|map-marker|whatsapp|envelope|fax))/i) ||
+      section.match(/(?:icon-home)[^>]*(?:><\/i>|>)\s*([\s\S]{3,400}?)(?:<br\s*\/?>|<a\s|<\/p|<i\s)/i);
     if (homeM) {
       address = clean(stripTags(homeM[1]));
     } else {
@@ -295,9 +310,11 @@ function cardParser(html) {
       }
     }
 
+    const coords = extractCoords(section);
+
     if (!phone && !address) continue;
     if (name.length >= 3) {
-      results.push({ name, district, address, phone });
+      results.push({ name, district, address, phone, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
     }
   }
 
@@ -335,8 +352,9 @@ function antalyaParser(html) {
     }
 
     const phone = cleanPhone(m[1] || m[2]);
+    const coords = extractCoords(fullBlock);
     if (name && name.length >= 3) {
-      results.push({ name, address, phone, district: "" });
+      results.push({ name, address, phone, district: "", ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
     }
   }
   return results;
@@ -401,7 +419,8 @@ function iconUserMdParser(html) {
     const telM = block.match(/href="tel:([^"]+)"/i) || block.match(/icon-phone[^>]*(?:><\/i>|>)\s*([\d\s()+\-]{7,20}?)(?:<br|<\/|<i|<a)/i);
     const phone = telM ? cleanPhone(telM[1]) : "";
 
-    results.push({ name, district: "", address, phone });
+    const coords = extractCoords(block);
+    results.push({ name, district: "", address, phone, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
   }
   return results;
 }
@@ -456,8 +475,9 @@ function trendItemParser(html) {
       if (phonePlainM) phone = cleanPhone(phonePlainM[1]);
     }
 
+    const coords = extractCoords(block);
     if (name.length >= 3 && (phone || address)) {
-      results.push({ name, district, address, phone });
+      results.push({ name, district, address, phone, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
     }
   }
 
@@ -510,8 +530,9 @@ function karamanParser(html) {
       if (phoneM) phone = cleanPhone(phoneM[1]);
     }
 
+    const coords = extractCoords(after);
     if (name.length >= 2 && (address || phone)) {
-      results.push({ name, district, address, phone });
+      results.push({ name, district, address, phone, ...(coords ? { lat: coords.lat, lng: coords.lng } : {}) });
     }
   }
 

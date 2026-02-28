@@ -1,6 +1,7 @@
 import { resolveActiveDutyDate } from "../time.js";
 import { logRun } from "./loggingLayer.js";
 import { normalizeText, resolveDistrictId, resolveDutyWindow } from "./normalizeLayer.js";
+import { cacheDel, dutyProvinceKey, dutyDistrictKey } from "../cache.js";
 
 export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   const districts = await sql`
@@ -30,12 +31,13 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
         INSERT INTO pharmacies (
           id, province_id, district_id,
           canonical_name, normalized_name,
-          address, phone, is_active, updated_at
+          address, phone, lat, lng, is_active, updated_at
         )
         VALUES (
           gen_random_uuid(), ${ep.province_id}, ${districtId},
           ${row.name}, ${normName},
           ${row.address || ""}, ${row.phone || ""},
+          ${row.lat ?? null}, ${row.lng ?? null},
           true, now()
         )
         ON CONFLICT (district_id, normalized_name) DO UPDATE SET
@@ -47,6 +49,14 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
           phone = CASE
             WHEN EXCLUDED.phone != '' THEN EXCLUDED.phone
             ELSE pharmacies.phone
+          END,
+          lat = CASE
+            WHEN EXCLUDED.lat IS NOT NULL THEN EXCLUDED.lat
+            ELSE pharmacies.lat
+          END,
+          lng = CASE
+            WHEN EXCLUDED.lng IS NOT NULL THEN EXCLUDED.lng
+            ELSE pharmacies.lng
           END,
           is_active  = true,
           updated_at = now()
@@ -91,7 +101,8 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
             name: row.name,
             address: row.address,
             phone: row.phone,
-            district: row.district
+            district: row.district,
+            ...(row.lat != null ? { lat: row.lat, lng: row.lng } : {})
           })}::jsonb
         )
         ON CONFLICT (duty_record_id, source_id, source_url) DO UPDATE SET
@@ -120,6 +131,21 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   }
 
   const status = upserted === 0 ? "failed" : upserted < rows.length ? "partial" : "success";
+
+  // Başarılı/kısmi ingest sonrası Redis önbelleğini temizle.
+  // Böylece bir sonraki API isteği hemen taze veriyi DB'den çeker
+  // (önceki stale cache 10 dakika daha servis edilmez).
+  if (upserted > 0) {
+    try {
+      const keysToDelete = [
+        dutyProvinceKey(ilSlug),
+        ...districts.map((d) => dutyDistrictKey(ilSlug, d.slug)),
+      ];
+      await cacheDel(keysToDelete);
+    } catch {
+      /* cache temizleme başarısız olsa bile ingest tamamlandı sayılır */
+    }
+  }
 
   await logRun(
     sql,

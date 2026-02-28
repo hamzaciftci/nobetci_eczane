@@ -1,13 +1,62 @@
-import { Phone, Navigation, MapPin, AlertTriangle, ShieldCheck, Clock, ExternalLink, Globe } from "lucide-react";
+import { AlertTriangle, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Pharmacy } from "@/types/pharmacy";
-import { Badge } from "@/components/ui/badge";
-import { formatTimeAgo } from "@/lib/date";
+
+// Nöbet dönemi metnini döndürür.
+// Nöbet her gün 08:00 İstanbul saatiyle değişir.
+// Örnek: "27 Şubat Cuma akşamından 28 Şubat C.tesi sabahına kadar"
+function getDutyPeriodText(): string {
+  const now = new Date();
+  // Istanbul = UTC+3 (Türkiye DST uygulamıyor)
+  const istMs = now.getTime() + 3 * 60 * 60 * 1000;
+  const ist = new Date(istMs);
+  const istHour = ist.getUTCHours();
+
+  // 08:00'den önce dünün nöbeti gösterilir
+  const duty = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
+  if (istHour < 8) duty.setUTCDate(duty.getUTCDate() - 1);
+
+  const next = new Date(duty);
+  next.setUTCDate(duty.getUTCDate() + 1);
+
+  const months = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  const days   = ["Pazar","Pzt.","Salı","Çrş.","Prş.","Cuma","C.tesi"];
+  const lbl = (d: Date) => `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${days[d.getUTCDay()]}`;
+
+  return `${lbl(duty)} akşamından ${lbl(next)} sabahına kadar`;
+}
 
 interface PharmacyCardProps {
   pharmacy: Pharmacy;
   onReport?: (pharmacy: Pharmacy) => void;
   index?: number;
+}
+
+function EczaneIcon() {
+  return (
+    <svg
+      width="48"
+      height="49"
+      viewBox="0 0 48 49"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        opacity="0.2"
+        d="M40.5 6.05566H7.5C7.10218 6.05566 6.72064 6.29272 6.43934 6.71467C6.15804 7.13663 6 7.70893 6 8.30566V39.8057C6 40.4024 6.15804 40.9747 6.43934 41.3967C6.72064 41.8186 7.10218 42.0557 7.5 42.0557H40.5C40.8978 42.0557 41.2794 41.8186 41.5607 41.3967C41.842 40.9747 42 40.4024 42 39.8057V8.30566C42 7.70893 41.842 7.13663 41.5607 6.71467C41.2794 6.29272 40.8978 6.05566 40.5 6.05566Z"
+        fill="#C21A26"
+      />
+      <path
+        d="M40.5 4.55566H7.5C6.70435 4.55566 5.94129 4.87173 5.37868 5.43434C4.81607 5.99695 4.5 6.76001 4.5 7.55566L4.5 41.0557C4.5 41.8513 4.81607 42.6144 5.37868 43.177C5.94129 43.7396 6.70435 44.0557 7.5 44.0557H40.5C41.2957 44.0557 42.0587 43.7396 42.6213 43.177C43.1839 42.6144 43.5 41.8513 43.5 41.0557V7.55566C43.5 6.76001 43.1839 5.99695 42.6213 5.43434C42.0587 4.87173 41.2957 4.55566 40.5 4.55566ZM40.5 41.0557H7.5V7.55566H40.5V41.0557Z"
+        fill="#C21A26"
+      />
+      <path
+        d="M32.5 13.5557V18.0747H21.8696V21.4417H31.5532V25.6063H21.8696V29.9481H32.5V34.5557H15.5V13.5557H32.5Z"
+        fill="#C21A26"
+      />
+    </svg>
+  );
 }
 
 const PharmacyCard = ({ pharmacy, onReport, index = 0 }: PharmacyCardProps) => {
@@ -19,157 +68,126 @@ const PharmacyCard = ({ pharmacy, onReport, index = 0 }: PharmacyCardProps) => {
     ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.address)}`;
 
-  const appleUrl = hasCoords
-    ? `https://maps.apple.com/?daddr=${lat},${lng}`
-    : `https://maps.apple.com/?q=${encodeURIComponent(pharmacy.address)}`;
-
-  const osmUrl = hasCoords
-    ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`
-    : null;
+  const phoneClean = pharmacy.phone ? pharmacy.phone.replace(/\s/g, "") : null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.05 }}
-      className={`group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card-hover ${
-        pharmacy.isDegraded ? "border-accent/40 bg-accent/[0.03]" : "border-border"
-      }`}
+      transition={{ duration: 0.3, delay: index * 0.04 }}
     >
       {/* Degraded warning */}
       {pharmacy.isDegraded && (
-        <div className="flex items-center gap-1.5 border-b border-accent/20 bg-accent/10 px-5 py-2.5 text-xs font-medium text-accent-foreground">
+        <div className="flex items-center gap-1.5 rounded-t-lg border border-b-0 border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-700 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-400">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           Kaynak yenileniyor — veri eski olabilir
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-border p-5 pb-4">
-        <h3 className="text-[15px] font-bold text-card-foreground leading-tight">
-          {pharmacy.name}
-        </h3>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {pharmacy.verificationCount > 0 && (
-            <Badge variant="secondary" className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold gap-1">
-              <ShieldCheck className="h-3 w-3 text-accent" />
-              {pharmacy.verificationCount}×
-            </Badge>
-          )}
-          <Badge variant="secondary" className="shrink-0 rounded-md px-2.5 py-1 text-[11px] font-semibold">
-            {pharmacy.district}
-          </Badge>
+      {/* Main row */}
+      <div
+        className={`flex items-center gap-4 border border-border bg-card px-5 py-4 transition-colors hover:bg-muted/40 ${
+          pharmacy.isDegraded
+            ? "rounded-b-lg border-amber-200 dark:border-amber-800/40"
+            : "rounded-lg"
+        }`}
+      >
+        {/* Icon */}
+        <div className="hidden shrink-0 sm:flex h-14 w-14 items-center justify-center rounded-md bg-[#C21A26]/8 dark:bg-[#C21A26]/15">
+          <EczaneIcon />
         </div>
-      </div>
 
-      {/* Body */}
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-start gap-2.5 text-sm text-foreground">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-          <div className="flex flex-col gap-0.5">
-            <span className="font-medium leading-snug">{pharmacy.address}</span>
-            {pharmacy.addressDetail && (
-              <span className="text-xs text-muted-foreground leading-relaxed">
-                {pharmacy.addressDetail}
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <h3 className="text-[15px] font-bold text-card-foreground leading-snug">
+              {pharmacy.name}
+            </h3>
+            {pharmacy.district && (
+              <span className="text-xs font-medium text-muted-foreground">
+                {pharmacy.district}
+              </span>
+            )}
+            {pharmacy.distance !== undefined && (
+              <span className="text-xs font-semibold text-[#C21A26]">
+                {pharmacy.distance < 1
+                  ? `${Math.round(pharmacy.distance * 1000)} m`
+                  : `${pharmacy.distance.toFixed(1)} km`}
               </span>
             )}
           </div>
-        </div>
 
-        {pharmacy.phone && (
-          <div className="flex items-center gap-2.5 text-sm">
-            <Phone className="h-4 w-4 shrink-0 text-primary" />
+          {pharmacy.address && (
+            <p className="mt-0.5 text-sm text-muted-foreground leading-snug line-clamp-2">
+              {pharmacy.address}
+              {pharmacy.addressDetail && (
+                <span className="block text-xs">{pharmacy.addressDetail}</span>
+              )}
+            </p>
+          )}
+
+          {pharmacy.phone && (
             <a
-              href={`tel:${pharmacy.phone.replace(/\s/g, "")}`}
-              className="font-medium text-foreground hover:text-primary transition-colors"
-              aria-label={`${pharmacy.name} eczanesini ara`}
+              href={`tel:${phoneClean}`}
+              className="mt-0.5 inline-block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+              aria-label={`${pharmacy.name} ara`}
             >
               {pharmacy.phone}
             </a>
-          </div>
-        )}
+          )}
 
-        {/* Distance badge (nearest mode) */}
-        {pharmacy.distance !== undefined && (
-          <Badge variant="outline" className="w-fit rounded-full border-accent/40 bg-accent/5 text-xs font-semibold text-accent">
-            {pharmacy.distance < 1
-              ? `${Math.round(pharmacy.distance * 1000)} m uzaklıkta`
-              : `${pharmacy.distance.toFixed(1)} km uzaklıkta`}
-          </Badge>
-        )}
-      </div>
+          <p className="mt-1 text-[11px] text-muted-foreground/80">
+            {getDutyPeriodText()}
+          </p>
+        </div>
 
-      {/* Meta */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-muted/30 px-5 py-3">
-        <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          {formatTimeAgo(pharmacy.lastUpdated)}
-        </span>
-        {pharmacy.sourceUrl ? (
+        {/* Action links — desktop */}
+        <div className="hidden shrink-0 flex-col items-end gap-2 md:flex">
           <a
-            href={pharmacy.sourceUrl}
+            href={googleUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
+            className="flex items-center gap-1 text-sm font-semibold text-[#C21A26] transition-opacity hover:opacity-70"
           >
-            <ExternalLink className="h-3 w-3" />
-            {pharmacy.source}
+            Yol Tarifi Alın
+            <ArrowUpRight className="h-4 w-4" />
           </a>
-        ) : (
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <ExternalLink className="h-3 w-3" />
-            {pharmacy.source}
-          </span>
-        )}
-        {pharmacy.accuracyScore > 0 && (
-          <span className="text-[11px] text-muted-foreground">
-            Güven: %{Math.round(pharmacy.accuracyScore)}
-          </span>
-        )}
+          {phoneClean && (
+            <a
+              href={`tel:${phoneClean}`}
+              className="flex items-center gap-1 text-sm font-semibold text-[#C21A26] transition-opacity hover:opacity-70"
+              aria-label={`${pharmacy.name} ara`}
+            >
+              Hemen Arayın
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex border-t border-border">
-        {pharmacy.phone ? (
-          <a
-            href={`tel:${pharmacy.phone.replace(/\s/g, "")}`}
-            className="flex flex-1 items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-            aria-label={`${pharmacy.name} eczanesini ara`}
-          >
-            <Phone className="h-4 w-4" />
-            Ara
-          </a>
-        ) : (
-          <span
-            className="flex flex-1 cursor-not-allowed items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-muted-foreground opacity-40"
-            title="Telefon numarası yok"
-          >
-            <Phone className="h-4 w-4" />
-            Ara
-          </span>
-        )}
+      {/* Action links — mobile (below card) */}
+      <div className="mt-1 flex gap-3 md:hidden">
         <a
           href={googleUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 border-r border-border py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+          className="flex flex-1 items-center justify-center gap-1 rounded-md border border-border bg-card py-2.5 text-xs font-semibold text-[#C21A26] transition-colors hover:bg-muted/40"
         >
-          <Navigation className="h-4 w-4" />
-          Yol Tarifi
+          Yol Tarifi Alın
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </a>
-        {osmUrl ? (
+        {phoneClean ? (
           <a
-            href={osmUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-14 items-center justify-center py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            title="OpenStreetMap"
+            href={`tel:${phoneClean}`}
+            className="flex flex-1 items-center justify-center gap-1 rounded-md border border-border bg-card py-2.5 text-xs font-semibold text-[#C21A26] transition-colors hover:bg-muted/40"
           >
-            <Globe className="h-4 w-4" />
+            Hemen Arayın
+            <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
         ) : (
-          <span className="flex w-14 cursor-not-allowed items-center justify-center py-3.5 opacity-30" title="Koordinat yok">
-            <Globe className="h-4 w-4 text-muted-foreground" />
+          <span className="flex flex-1 cursor-not-allowed items-center justify-center gap-1 rounded-md border border-border bg-card py-2.5 text-xs font-semibold text-muted-foreground opacity-40">
+            Hemen Arayın
+            <ArrowUpRight className="h-3.5 w-3.5" />
           </span>
         )}
       </div>
@@ -178,9 +196,9 @@ const PharmacyCard = ({ pharmacy, onReport, index = 0 }: PharmacyCardProps) => {
       {onReport && (
         <button
           onClick={() => onReport(pharmacy)}
-          className="border-t border-border px-5 py-2.5 text-left text-[11px] text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="mt-1 flex w-full items-center gap-1 px-1 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none"
         >
-          <AlertTriangle className="mr-1 inline h-3 w-3" />
+          <AlertTriangle className="h-3 w-3" />
           Yanlış bilgi bildir
         </button>
       )}

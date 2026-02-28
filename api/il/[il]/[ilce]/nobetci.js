@@ -3,7 +3,7 @@ import { withDb } from "../../../_lib/db.js";
 import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../../_lib/http.js";
 import { queryDutyFallback, degradedPayload, isViewMissing } from "../../../_lib/fallback.js";
 import { resolveActiveDutyDate } from "../../../_lib/time.js";
-import { cacheGet, cacheSet, dutyDistrictKey } from "../../../_lib/cache.js";
+import { cacheGet, cacheSet, dutyDistrictKey, TTL_DEGRADED_SECONDS } from "../../../_lib/cache.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -18,6 +18,8 @@ export default async function handler(req, res) {
   }
 
   const cacheKey = dutyDistrictKey(ilSlug, ilceSlug);
+
+  res.setHeader("Cache-Control", "no-store");
 
   try {
     const cached = await cacheGet(cacheKey);
@@ -51,7 +53,8 @@ export default async function handler(req, res) {
     });
 
     const payload = buildDutyResponse(rows, dutyDate);
-    if (stale || dutyDate !== resolveActiveDutyDate()) {
+    const isDegraded = stale || dutyDate !== resolveActiveDutyDate();
+    if (isDegraded) {
       payload.status = "degraded";
       payload.degraded_info = {
         last_successful_update: lastSuccessfulDate ?? dutyDate ?? null,
@@ -62,7 +65,7 @@ export default async function handler(req, res) {
           : "Bu ilçe için bugün nöbet kaydı bulunamadı."
       };
     }
-    await cacheSet(cacheKey, payload);
+    await cacheSet(cacheKey, payload, isDegraded ? TTL_DEGRADED_SECONDS : undefined);
     return sendJson(res, 200, payload);
   } catch (error) {
     console.error("[duty/district]", ilSlug, ilceSlug, error?.message ?? error);

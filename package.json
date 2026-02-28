@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "db:init": "node scripts/db-init.mjs",
     "verify:all": "node scripts/verify-all.mjs",
-    "verify:province": "node scripts/verify-all.mjs"
+    "verify:province": "node scripts/verify-all.mjs",
+    "verify:live": "node scripts/verify-live.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

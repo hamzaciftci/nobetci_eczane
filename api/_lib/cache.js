@@ -13,7 +13,8 @@ function getRedisClient() {
   return clientPromise;
 }
 
-const TTL_SECONDS = 600; // 10 dakika
+export const TTL_SECONDS = 600;         // Normal veri: 10 dakika
+export const TTL_DEGRADED_SECONDS = 30; // Stale/degraded veri: 30 sn → sık retry
 
 export async function cacheGet(key) {
   const client = getRedisClient();
@@ -27,11 +28,16 @@ export async function cacheGet(key) {
   }
 }
 
-export async function cacheSet(key, value) {
+/**
+ * @param {string}  key
+ * @param {*}       value
+ * @param {number}  [ttl=TTL_SECONDS]  saniye cinsinden TTL
+ */
+export async function cacheSet(key, value, ttl = TTL_SECONDS) {
   const client = getRedisClient();
   if (!client) return false;
   try {
-    await client.setEx(key, TTL_SECONDS, JSON.stringify(value));
+    await client.setEx(key, ttl, JSON.stringify(value));
     return true;
   } catch (err) {
     console.warn("[redis] set failed", err?.message);
@@ -59,5 +65,6 @@ export function dutyDistrictKey(ilSlug, ilceSlug) {
 }
 
 export function nearestKey(lat, lng) {
-  return `nearest:${lat}:${lng}`;
+  // Round to 2 decimal places (~1.1 km precision) for better cache hit rate
+  return `nearest:${Math.round(lat * 100) / 100}:${Math.round(lng * 100) / 100}`;
 }

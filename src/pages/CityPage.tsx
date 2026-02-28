@@ -9,7 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/MainLayout";
 import PharmacyCard from "@/components/PharmacyCard";
 import MapPanel from "@/components/MapPanel";
-import DegradedBanner from "@/components/DegradedBanner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ErrorState from "@/components/ErrorState";
 import { PharmacySkeletonList } from "@/components/PharmacySkeleton";
@@ -57,7 +56,6 @@ export default function CityPage() {
   const selectedDistrictName =
     districts.find((d) => d.slug === selectedDistrict)?.name ?? titleFromSlug(selectedDistrict || "");
 
-  const hasDegraded = (activeDuty?.status ?? "ok") === "degraded";
   const isLoading = provinceQuery.isLoading || (Boolean(selectedDistrict) && districtQuery.isLoading);
   const hasError = selectedDistrict ? districtQuery.isError && !districtQuery.data : provinceQuery.isError;
 
@@ -142,13 +140,6 @@ export default function CityPage() {
             </div>
           </div>
         </div>
-
-        {/* Degraded banner */}
-        {hasDegraded && (
-          <div className="mb-6">
-            <DegradedBanner lastSuccessful={activeDuty?.degraded_info?.last_successful_update ?? undefined} onRetry={handleRefresh} />
-          </div>
-        )}
 
         {/* District filter — en üstte */}
         {districts.length > 0 && (

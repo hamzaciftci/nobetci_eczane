@@ -122,7 +122,7 @@ function tableParser(html) {
   let headerIdx = -1;
   let cols = null;
   for (let i = 0; i < Math.min(4, best.rows.length); i++) {
-    const c = detectTableCols(best.rows[i]);
+    const c = detectTableCols(best.rows[i].cells);
     if (c.name >= 0) {
       headerIdx = i;
       cols = c;
@@ -133,14 +133,16 @@ function tableParser(html) {
 
   const results = [];
   for (let i = headerIdx + 1; i < best.rows.length; i++) {
-    const cells = best.rows[i];
+    const { cells, rawHtml } = best.rows[i];
     const name = clean(cells[cols.name] ?? "");
     if (!name || name.length < 3) continue;
+    const coords = extractCoords(rawHtml);
     results.push({
       name,
       address: cols.address >= 0 ? clean(cells[cols.address] ?? "") : "",
       phone: cols.phone >= 0 ? cleanPhone(cells[cols.phone] ?? "") : "",
-      district: cols.district >= 0 ? clean(cells[cols.district] ?? "") : ""
+      district: cols.district >= 0 ? clean(cells[cols.district] ?? "") : "",
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {})
     });
   }
   return results;
@@ -161,7 +163,8 @@ function extractTables(html) {
       while ((cm = cellRe.exec(rm[1])) !== null) {
         cells.push(decodeEntities(stripTags(cm[1])));
       }
-      if (cells.some((c) => c.trim())) rows.push(cells);
+      // rawHtml korunuyor → satır içindeki Google Maps href'lerinden koordinat çıkarmak için
+      if (cells.some((c) => c.trim())) rows.push({ cells, rawHtml: rm[1] });
     }
     if (rows.length >= 2) tables.push({ rows });
   }

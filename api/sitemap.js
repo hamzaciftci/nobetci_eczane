@@ -104,12 +104,18 @@ async function serveProvinces(res) {
   const cached = await cacheGet(CACHE_KEY);
   if (cached) return sendXml(res, cached, 3600);
 
-  const rows = await withDb((db) => db`
-    SELECT p.slug, sh.last_success_at
-    FROM provinces p
-    LEFT JOIN source_health sh ON sh.province_id = p.id
-    ORDER BY p.slug
-  `);
+  let rows;
+  try {
+    rows = await withDb((db) => db`
+      SELECT p.slug, sh.last_success_at
+      FROM provinces p
+      LEFT JOIN source_health sh ON sh.province_id = p.id
+      ORDER BY p.slug
+    `);
+  } catch {
+    // source_health tablosu henüz oluşturulmamışsa sadece slug'larla devam et
+    rows = await withDb((db) => db`SELECT slug, null::timestamptz AS last_success_at FROM provinces ORDER BY slug`);
+  }
 
   const fallback = todayIso();
   const urls = rows.map(({ slug, last_success_at }) => ({
@@ -129,14 +135,25 @@ async function serveDistricts(res, page) {
   const cached = await cacheGet(CACHE_KEY);
   if (cached) return sendXml(res, cached, 3600);
 
-  const rows = await withDb((db) => db`
-    SELECT d.slug AS ilce_slug, p.slug AS il_slug, sh.last_success_at
-    FROM districts d
-    JOIN provinces p ON p.id = d.province_id
-    LEFT JOIN source_health sh ON sh.province_id = p.id
-    ORDER BY p.slug, d.slug
-    LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}
-  `);
+  let rows;
+  try {
+    rows = await withDb((db) => db`
+      SELECT d.slug AS ilce_slug, p.slug AS il_slug, sh.last_success_at
+      FROM districts d
+      JOIN provinces p ON p.id = d.province_id
+      LEFT JOIN source_health sh ON sh.province_id = p.id
+      ORDER BY p.slug, d.slug
+      LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}
+    `);
+  } catch {
+    rows = await withDb((db) => db`
+      SELECT d.slug AS ilce_slug, p.slug AS il_slug, null::timestamptz AS last_success_at
+      FROM districts d
+      JOIN provinces p ON p.id = d.province_id
+      ORDER BY p.slug, d.slug
+      LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}
+    `);
+  }
 
   if (!rows.length && page > 1) return res.status(404).end();
 

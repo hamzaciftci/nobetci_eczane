@@ -23,7 +23,7 @@ const CDN_TTL   = 3600;
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    return res.status(405).end();
+    res.status(405); return res.end();
   }
 
   const cached = await cacheGet(CACHE_KEY);
@@ -52,6 +52,6 @@ export default async function handler(req, res) {
     return sendXml(res, xml, CDN_TTL);
   } catch (error) {
     console.error("[sitemap:provinces] error:", error?.message);
-    return res.status(500).end();
+    res.status(500); return res.end();
   }
 }

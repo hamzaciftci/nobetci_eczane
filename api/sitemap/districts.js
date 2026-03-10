@@ -33,7 +33,7 @@ function cacheKey(page) {
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    return res.status(405).end();
+    res.status(405); return res.end();
   }
 
   const pageParam = Number(req.query?.page ?? 1);
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     `);
 
     if (!rows.length && page > 1) {
-      return res.status(404).end();
+      res.status(404); return res.end();
     }
 
     const fallbackDate = todayIso();
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
     return sendXml(res, xml, CDN_TTL);
   } catch (error) {
     console.error("[sitemap:districts] error:", error?.message);
-    return res.status(500).end();
+    res.status(500); return res.end();
   }
 }
 
@@ -110,6 +110,6 @@ async function handleIndex(req, res) {
     return sendXml(res, xml, CDN_TTL);
   } catch (error) {
     console.error("[sitemap:districts:index] error:", error?.message);
-    return res.status(500).end();
+    res.status(500); return res.end();
   }
 }

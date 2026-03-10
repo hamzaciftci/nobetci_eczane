@@ -74,7 +74,8 @@ export function sendXml(res, xml, maxAge = 3600) {
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   // Vercel Edge Network bu header'a göre cache eder
   res.setHeader("Cache-Control", `public, s-maxage=${maxAge}, stale-while-revalidate=60`);
-  res.status(200).end(xml);
+  res.status(200);
+  res.send(xml);
 }
 
 export { BASE_URL };

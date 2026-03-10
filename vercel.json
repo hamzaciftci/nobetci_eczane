@@ -42,7 +42,7 @@
     "rewrites":  [
                      {
                          "source":  "/sitemap.xml",
-                         "destination":  "/api/sitemap/index"
+                         "destination":  "/api/sitemap"
                      },
                      {
                          "source":  "/sitemap-:name.xml",

@@ -1,0 +1,153 @@
+name: Cron Jobs
+
+# GitHub Actions cron syntax: UTC saati kullanır.
+# Vercel Hobby plan günde 1'den fazla cron'a izin vermediği için
+# tüm zamanlanmış görevler buradan yönetilir.
+
+on:
+  schedule:
+    # --- İngest (her 30 dakikada bir, 4 shard paralel) ---
+    - cron: "0,30 * * * *"   # shard-0
+    - cron: "7,37 * * * *"   # shard-1
+    - cron: "15,45 * * * *"  # shard-2
+    - cron: "22,52 * * * *"  # shard-3
+
+    # --- Freshness check (her saat başı) ---
+    - cron: "0 * * * *"
+
+    # --- Sitemap refresh (günde 2 kez: 03:00 ve 15:00 UTC) ---
+    - cron: "0 3 * * *"
+    - cron: "0 15 * * *"
+
+  # Manuel tetikleme (GitHub Actions UI'dan)
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Çalıştırılacak iş"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - ingest
+          - freshness-check
+          - sitemap-refresh
+
+env:
+  BASE_URL: https://www.bugunnobetcieczaneler.com
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # İngest — 4 shard, paralel
+  # ─────────────────────────────────────────────────────────────
+  ingest-shard-0:
+    name: "Ingest shard 0/4"
+    runs-on: ubuntu-latest
+    # Sadece ilgili schedule veya manuel tetiklemede çalış
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
+      github.event_name == 'schedule' && (
+        contains(github.event.schedule, '0,30') ||
+        contains(github.event.schedule, '0 *')
+      )
+    steps:
+      - name: Trigger ingest shard 0
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=0&shard_count=4" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 65 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"
+
+  ingest-shard-1:
+    name: "Ingest shard 1/4"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
+      github.event_name == 'schedule' && (
+        contains(github.event.schedule, '7,37') ||
+        contains(github.event.schedule, '0 *')
+      )
+    steps:
+      - name: Trigger ingest shard 1
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=1&shard_count=4" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 65 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"
+
+  ingest-shard-2:
+    name: "Ingest shard 2/4"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
+      github.event_name == 'schedule' && (
+        contains(github.event.schedule, '15,45') ||
+        contains(github.event.schedule, '0 *')
+      )
+    steps:
+      - name: Trigger ingest shard 2
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=2&shard_count=4" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 65 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"
+
+  ingest-shard-3:
+    name: "Ingest shard 3/4"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
+      github.event_name == 'schedule' && (
+        contains(github.event.schedule, '22,52') ||
+        contains(github.event.schedule, '0 *')
+      )
+    steps:
+      - name: Trigger ingest shard 3
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=3&shard_count=4" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 65 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"
+
+  # ─────────────────────────────────────────────────────────────
+  # Freshness check — her saat başı
+  # ─────────────────────────────────────────────────────────────
+  freshness-check:
+    name: "Freshness check"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'freshness-check') ||
+      github.event_name == 'schedule' && contains(github.event.schedule, '0 *')
+    steps:
+      - name: Trigger freshness check
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/freshness-check" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 35 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"
+
+  # ─────────────────────────────────────────────────────────────
+  # Sitemap refresh — günde 2 kez
+  # ─────────────────────────────────────────────────────────────
+  sitemap-refresh:
+    name: "Sitemap refresh"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'sitemap-refresh') ||
+      github.event_name == 'schedule' && (
+        github.event.schedule == '0 3 * * *' ||
+        github.event.schedule == '0 15 * * *'
+      )
+    steps:
+      - name: Refresh sitemap cache & ping search engines
+        run: |
+          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/sitemap-refresh" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 65 \
+            -w "\nHTTP %{http_code} — %{time_total}s\n"

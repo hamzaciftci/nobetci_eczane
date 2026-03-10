@@ -1,6 +1,7 @@
 import { withDb } from "../../_lib/db.js";
 import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../_lib/http.js";
 import { cacheGet, cacheSet, dutyDatesKey } from "../../_lib/cache.js";
+import { resolveActiveDutyDate } from "../../_lib/time.js";
 
 const TTL_TARIHLER = 5 * 60; // 5 dakika
 
@@ -16,10 +17,11 @@ export default async function handler(req, res) {
 
   const ilSlug = getSingleQueryValue(req.query.il).toLowerCase();
   if (!ilSlug) return sendJson(res, 400, { error: "invalid_il" });
+  const TODAY = resolveActiveDutyDate();
 
   res.setHeader("Cache-Control", "no-store");
 
-  const cacheKey = dutyDatesKey(ilSlug);
+  const cacheKey = dutyDatesKey(ilSlug, TODAY);
   try {
     const cached = await cacheGet(cacheKey);
     if (cached) return sendJson(res, 200, cached);

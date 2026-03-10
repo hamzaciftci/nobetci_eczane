@@ -79,14 +79,39 @@ export function normalizeList(names) {
  * }}
  */
 export function diffLists(apiNames, liveNames) {
+  const { missing, extra, matched } = classifyDiff(apiNames, liveNames);
+  return { missing, extra, matched };
+}
+
+/**
+ * İki listeyi MISSING / EXTRA / MISMATCH olarak sınıflandırır.
+ * MISMATCH: normalize sonrası eşleşmeyen fakat Levenshtein <= maxDistance.
+ *
+ * @param {string[]} apiNames
+ * @param {string[]} liveNames
+ * @param {number} [maxDistance=2]
+ */
+export function classifyDiff(apiNames, liveNames, maxDistance = 2) {
   const apiSet  = new Set(apiNames.map(normalizeName).filter(Boolean));
   const liveSet = new Set(liveNames.map(normalizeName).filter(Boolean));
 
-  const missing = [...liveSet].filter((n) => !apiSet.has(n));
-  const extra   = [...apiSet].filter((n) => !liveSet.has(n));
+  const missingNorm = [...liveSet].filter((n) => !apiSet.has(n));
+  const extraNorm   = [...apiSet].filter((n) => !liveSet.has(n));
   const matched = [...liveSet].filter((n) => apiSet.has(n)).length;
 
-  return { missing, extra, matched };
+  const mismatch = pairNearMatches(missingNorm, extraNorm, maxDistance).map((pair) => ({
+    official: pair.a,
+    api: pair.b,
+    distance: pair.distance
+  }));
+
+  const mismatchOfficial = new Set(mismatch.map((m) => m.official));
+  const mismatchApi = new Set(mismatch.map((m) => m.api));
+
+  const missing = missingNorm.filter((name) => !mismatchOfficial.has(name));
+  const extra = extraNorm.filter((name) => !mismatchApi.has(name));
+
+  return { missing, extra, mismatch, matched };
 }
 
 /**
@@ -130,4 +155,30 @@ function levenshtein(a, b) {
     prev.splice(0, prev.length, ...curr);
   }
   return prev[b.length];
+}
+
+function pairNearMatches(aList, bList, maxDistance) {
+  if (!aList.length || !bList.length || maxDistance < 1) return [];
+
+  const candidates = [];
+  for (const a of aList) {
+    for (const b of bList) {
+      const distance = levenshtein(a, b);
+      if (distance <= maxDistance) {
+        candidates.push({ a, b, distance });
+      }
+    }
+  }
+  candidates.sort((x, y) => x.distance - y.distance || x.a.localeCompare(y.a, "tr-TR"));
+
+  const usedA = new Set();
+  const usedB = new Set();
+  const pairs = [];
+  for (const candidate of candidates) {
+    if (usedA.has(candidate.a) || usedB.has(candidate.b)) continue;
+    usedA.add(candidate.a);
+    usedB.add(candidate.b);
+    pairs.push(candidate);
+  }
+  return pairs;
 }

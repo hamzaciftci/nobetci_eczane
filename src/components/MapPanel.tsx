@@ -1,4 +1,8 @@
-import { Map, ExternalLink } from "lucide-react";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Map } from "lucide-react";
 import { Pharmacy } from "@/types/pharmacy";
 
 interface MapPanelProps {
@@ -6,8 +10,44 @@ interface MapPanelProps {
   collapsed?: boolean;
 }
 
+type GeoPharmacy = Pharmacy & { lat: number; lng: number };
+
+// Custom pharmacy pin: red rounded box with white E + triangle pointer
+const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+  <rect x="1" y="1" width="32" height="32" rx="6" fill="#C21A26"/>
+  <rect x="7" y="8" width="20" height="3.5" fill="white"/>
+  <rect x="7" y="8" width="3.5" height="18" fill="white"/>
+  <rect x="7" y="15.5" width="14" height="3" fill="white"/>
+  <rect x="7" y="22.5" width="20" height="3.5" fill="white"/>
+  <path d="M17 44 L7 32 L27 32 Z" fill="#C21A26"/>
+</svg>`;
+
+const pharmacyIcon = L.divIcon({
+  html: PIN_SVG,
+  className: "",
+  iconSize: [34, 44],
+  iconAnchor: [17, 44],
+  popupAnchor: [0, -46],
+});
+
+function BoundsUpdater({ pharmacies }: { pharmacies: GeoPharmacy[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (pharmacies.length === 0) return;
+    const bounds = L.latLngBounds(pharmacies.map((p) => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
+  }, [pharmacies, map]);
+  return null;
+}
+
 const MapPanel = ({ pharmacies, collapsed = false }: MapPanelProps) => {
-  const geoPharmacies = pharmacies.filter((item): item is Pharmacy & { lat: number; lng: number } => item.lat !== null && item.lng !== null);
+  const geoPharmacies = pharmacies.filter(
+    (p): p is GeoPharmacy =>
+      typeof p.lat === "number" &&
+      typeof p.lng === "number" &&
+      Number.isFinite(p.lat) &&
+      Number.isFinite(p.lng)
+  );
 
   if (collapsed || geoPharmacies.length === 0) {
     return (
@@ -22,60 +62,70 @@ const MapPanel = ({ pharmacies, collapsed = false }: MapPanelProps) => {
     );
   }
 
-  // Use OSM embed for a lightweight map
-  const center = geoPharmacies.length > 0
-    ? {
-        lat: geoPharmacies.reduce((s, p) => s + (p.lat || 0), 0) / geoPharmacies.length,
-        lng: geoPharmacies.reduce((s, p) => s + (p.lng || 0), 0) / geoPharmacies.length,
-      }
-    : { lat: 39.9334, lng: 32.8597 };
-
-  const bbox = (() => {
-    if (geoPharmacies.length === 0) return "";
-    const lats = geoPharmacies.map(p => p.lat!);
-    const lngs = geoPharmacies.map(p => p.lng!);
-    const pad = 0.02;
-    return `${Math.min(...lngs) - pad},${Math.min(...lats) - pad},${Math.max(...lngs) + pad},${Math.max(...lats) + pad}`;
-  })();
-
-  const osmEmbedUrl = bbox
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik`
-    : `https://www.openstreetmap.org/export/embed.html?bbox=${center.lng - 0.05},${center.lat - 0.05},${center.lng + 0.05},${center.lat + 0.05}&layer=mapnik`;
-
-  const osmFullUrl = `https://www.openstreetmap.org/#map=13/${center.lat}/${center.lng}`;
+  const center: [number, number] = [
+    geoPharmacies.reduce((s, p) => s + p.lat, 0) / geoPharmacies.length,
+    geoPharmacies.reduce((s, p) => s + p.lng, 0) / geoPharmacies.length,
+  ];
 
   return (
     <div className="rounded-lg border overflow-hidden">
-      <iframe
-        title="Nöbetçi eczane haritası"
-        src={osmEmbedUrl}
-        className="w-full border-0"
-        style={{ height: "360px" }}
-        loading="lazy"
-      />
-      {/* Pharmacy list under map */}
-      <div className="p-2.5 space-y-1.5 border-t bg-card max-h-48 overflow-y-auto">
-        {geoPharmacies.map((p) => (
-          <a
-            key={p.id}
-            href={`https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=17/${p.lat}/${p.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md hover:bg-muted transition-colors text-xs group"
-          >
-            <span className="font-medium text-foreground">{p.name}</span>
-            <ExternalLink className="h-2.5 w-2.5 text-muted-foreground group-hover:text-primary shrink-0" />
-          </a>
-        ))}
-      </div>
-      <a
-        href={osmFullUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block text-center text-[10px] text-muted-foreground hover:text-primary py-1.5 border-t transition-colors"
+      <MapContainer
+        center={center}
+        zoom={13}
+        style={{ height: "380px" }}
+        className="w-full"
+        scrollWheelZoom={false}
       >
-        OpenStreetMap'te aç →
-      </a>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <BoundsUpdater pharmacies={geoPharmacies} />
+        {geoPharmacies.map((p) => {
+          const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+          const phoneText = typeof p.phone === "string" ? p.phone : String(p.phone ?? "");
+          return (
+            <Marker key={`${p.id}-${p.lat}-${p.lng}`} position={[p.lat, p.lng]} icon={pharmacyIcon}>
+              <Popup minWidth={180} maxWidth={240}>
+                <div style={{ fontFamily: "inherit", lineHeight: 1.4 }}>
+                  <p style={{ fontWeight: 700, fontSize: "13px", margin: "0 0 4px" }}>
+                    {p.name}
+                  </p>
+                  {p.address && (
+                    <p style={{ fontSize: "11px", color: "#666", margin: "0 0 8px" }}>
+                      {p.address}
+                    </p>
+                  )}
+                  {phoneText && (
+                    <a
+                      href={`tel:${phoneText.replace(/\s/g, "")}`}
+                      style={{ display: "block", fontSize: "12px", color: "#2563eb", marginBottom: "6px" }}
+                    >
+                      {phoneText}
+                    </a>
+                  )}
+                  <a
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      color: "#C21A26",
+                      fontWeight: 600,
+                      fontSize: "12px",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Yol Tarifi Alın →
+                  </a>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+      </MapContainer>
     </div>
   );
 };

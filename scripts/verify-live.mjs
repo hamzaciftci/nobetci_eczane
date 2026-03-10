@@ -22,7 +22,7 @@ import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { scrapeProvince } from "./lib/scrapeProvince.mjs";
-import { diffLists } from "./lib/normalize.mjs";
+import { classifyDiff } from "./lib/normalize.mjs";
 import { ingestProvince } from "../api/_lib/ingest.js";
 import { createHash } from "crypto";
 
@@ -132,10 +132,10 @@ async function verifyOne(sql, ilSlug) {
   const dutyDate   = apiData.duty_date || "(yok)";
 
   // 4. Diff
-  const { missing, extra, matched } = diffLists(apiNames, liveNames);
+  const { missing, extra, mismatch, matched } = classifyDiff(apiNames, liveNames);
   const elapsed = Date.now() - started;
 
-  if (missing.length === 0 && extra.length === 0) {
+  if (missing.length === 0 && extra.length === 0 && mismatch.length === 0) {
     return { status: "PASS", il: ilSlug, matched, liveHash, apiHash, apiStatus, dutyDate, elapsed_ms: elapsed };
   }
 
@@ -145,6 +145,7 @@ async function verifyOne(sql, ilSlug) {
     matched,
     missing,
     extra,
+    mismatch,
     liveNames,
     apiNames,
     liveHash,
@@ -282,6 +283,10 @@ function printVerbose(r) {
       console.log(`  API'de var, kaynakta YOK (${r.extra.length}):`);
       r.extra.forEach((n) => console.log(`    + ${n}`));
     }
+    if (r.mismatch?.length) {
+      console.log(`  Yakın ama farklı (${r.mismatch.length}):`);
+      r.mismatch.forEach((m) => console.log(`    ≈ ${m.official}  <->  ${m.api} (d=${m.distance})`));
+    }
   } else if (r.status === "SOURCE_ERROR") {
     console.log(`  ⚠️  KAYNAK HATASI: ${r.error}`);
   } else if (r.status === "NO_SOURCE_DATA") {
@@ -300,7 +305,7 @@ function printCompact(r) {
   }[r.status] ?? "?  ";
 
   const detail = r.status === "FAIL"
-    ? `miss:${r.missing?.length ?? 0} extra:${r.extra?.length ?? 0}  [${r.apiStatus}]`
+    ? `miss:${r.missing?.length ?? 0} extra:${r.extra?.length ?? 0} mm:${r.mismatch?.length ?? 0} [${r.apiStatus}]`
     : r.status === "SOURCE_ERROR" || r.status === "API_ERROR"
       ? (r.error ?? "").slice(0, 30)
       : r.status === "PASS"
@@ -328,9 +333,12 @@ function printSummary(results) {
     results
       .filter((r) => r.status === "FAIL")
       .forEach((r) => {
-        console.log(`    ✗ ${r.il}  duty_date=${r.dutyDate}  miss:${r.missing?.length ?? 0} extra:${r.extra?.length ?? 0}`);
+        console.log(`    ✗ ${r.il}  duty_date=${r.dutyDate}  miss:${r.missing?.length ?? 0} extra:${r.extra?.length ?? 0} mm:${r.mismatch?.length ?? 0}`);
         if (r.missing?.length) console.log(`      Eksik: ${r.missing.join(", ")}`);
         if (r.extra?.length)   console.log(`      Fazla: ${r.extra.join(", ")}`);
+        if (r.mismatch?.length) {
+          console.log(`      Mismatch: ${r.mismatch.map((m) => `${m.official}<->${m.api}`).join(", ")}`);
+        }
       });
     console.log(`\n  Düzeltmek için: node scripts/verify-live.mjs --all --fix`);
   }

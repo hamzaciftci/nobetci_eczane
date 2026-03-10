@@ -52,6 +52,9 @@ export function parseHtmlPharmacies(html, parserKey = "generic_auto_v1") {
   const karamanRows = karamanParser(html);
   if (karamanRows.length >= 1) return karamanRows;
 
+  const yandexRows = yandexPlacemarkParser(html);
+  if (yandexRows.length >= 1) return yandexRows;
+
   return [];
 }
 
@@ -98,6 +101,8 @@ export function detectAjaxApiUrl(html, endpointUrl) {
 // ─── Parser dispatch ─────────────────────────────────────────────────────
 
 function dispatchParser(html, parserKey) {
+  if (parserKey.includes("osmaniye")) return osmaniyeEoParser(html);
+  if (parserKey.includes("yandex") || parserKey.includes("hatay")) return yandexPlacemarkParser(html);
   if (parserKey.includes("table")) return tableParser(html);
   if (parserKey.includes("inline_box") || parserKey.includes("inlinebox")) return inlineBoxParser(html);
   if (parserKey.includes("card")) return cardParser(html);
@@ -110,6 +115,63 @@ function dispatchParser(html, parserKey) {
   if (parserKey.includes("teknoecza_v2") || parserKey.includes("teknoecza2")) return teknoEczaV2Parser(html);
   if (parserKey.includes("konya_v1")) return konyaV1Parser(html);
   return [];
+}
+
+function osmaniyeEoParser(html) {
+  if (!html.includes("nobet-kart")) return [];
+
+  const results = [];
+  const cardRe = /<div[^>]*class="[^"]*nobet-kart[^"]*"[^>]*>([\s\S]*?)<hr>/gi;
+  let m;
+
+  while ((m = cardRe.exec(html)) !== null) {
+    const block = m[1];
+    const h4 = block.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1] ?? "";
+    const h4Text = clean(stripTags(h4));
+
+    let name =
+      clean(stripTags(h4.match(/<strong[^>]*>([\s\S]*?)<\/strong>/i)?.[1] ?? "")) ||
+      "";
+    if (!name && h4Text) {
+      const raw = h4Text
+        .replace(/^\d{2}\.\d{2}\.\d{4}\s*\/\s*/i, "")
+        .replace(/^OSMAN[Iİ]YE\s+[A-ZÇĞİÖŞÜ]+\s+/i, "")
+        .trim();
+      name = raw;
+    }
+    if (!name) continue;
+
+    let district = "";
+    const distDash = h4Text.match(/-\s*([A-ZÇĞİÖŞÜ ]{2,40})$/i);
+    if (distDash) district = clean(distDash[1]);
+    if (!district) {
+      const distSlash = h4Text.match(/\/\s*OSMAN[Iİ]YE\s+([A-ZÇĞİÖŞÜ]{2,40})/i);
+      if (distSlash) district = clean(distSlash[1]);
+    }
+
+    const addrM =
+      block.match(
+        /fa-home[^>]*(?:><\/i>|>)\s*([\s\S]{3,700}?)(?=<br\s*\/?>\s*<i[^>]*fa-phone|<i[^>]*fa-phone|<\/p>)/i
+      ) ||
+      block.match(/fa-home[^>]*(?:><\/i>|>)\s*([\s\S]{3,700}?)(?=<a[^>]+href="tel:)/i);
+    const address = addrM ? clean(stripTags(addrM[1])) : "";
+
+    const telM = block.match(/href="tel:([^"]+)"/i);
+    const phone = telM ? cleanPhone(telM[1]) : "";
+    const coords = extractCoords(block);
+
+    if (name.length >= 2) {
+      results.push({
+        name,
+        district,
+        address,
+        phone,
+        ...(coords ? { lat: coords.lat, lng: coords.lng } : {})
+      });
+    }
+  }
+
+  return results;
 }
 
 // ─── Strategy 1: HTML tables ─────────────────────────────────────────────
@@ -384,6 +446,77 @@ function teknoEczaV1Parser(html) {
     const name = clean(m2[1]);
     if (name.length >= 3) results.push({ name, district: "", address: "", phone: "" });
   }
+
+  if (results.length) return results;
+
+  // Newer Oben/TeknoEcza layout (e.g., Niğde): cards under ".eight columns".
+  const blockRe = /<div class="eight columns bottom-1">([\s\S]{0,1800}?)(?:<p><hr><\/p>|<\/div>\s*<\/div>)/gi;
+  let bm;
+  while ((bm = blockRe.exec(html)) !== null) {
+    const block = bm[1];
+    const name = clean(
+      stripTags(block.match(/<strong>\s*([^<]*?ECZANES[İI]?)\s*<\/strong>/i)?.[1] ?? "")
+    );
+    if (name.length < 3) continue;
+
+    const district = clean(
+      stripTags(block.match(/icon-hand-right[^>]*(?:><\/i>|>)\s*([\s\S]{1,80}?)(?:<br|<i\s)/i)?.[1] ?? "")
+    );
+    const address = clean(
+      stripTags(block.match(/icon-home[^>]*(?:><\/i>|>)\s*([\s\S]{3,450}?)(?:<br|<i\s)/i)?.[1] ?? "")
+    );
+    const telM =
+      block.match(/href="tel:([^"]+)"/i) ||
+      block.match(/icon-phone[^>]*(?:><\/i>|>)\s*([\d\s()+\-]{7,20}?)(?:<br|<\/|<i|<a)/i);
+    const phone = telM ? cleanPhone(telM[1]) : "";
+    const coords = extractCoords(block);
+
+    results.push({
+      name,
+      district,
+      address,
+      phone,
+      ...(coords ? { lat: coords.lat, lng: coords.lng } : {})
+    });
+  }
+
+  return results;
+}
+
+function yandexPlacemarkParser(html) {
+  if (!/ymaps\.Placemark/i.test(html) || !/balloonContent/i.test(html)) return [];
+
+  const results = [];
+  const re =
+    /ymaps\.Placemark\(\s*\[\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\]\s*,\s*\{\s*balloonContent:\s*'([\s\S]*?)'\s*\}/gi;
+  let m;
+
+  while ((m = re.exec(html)) !== null) {
+    const lat = Number(m[1]);
+    const lng = Number(m[2]);
+    const balloon = String(m[3] || "").replace(/\\'/g, "'");
+
+    const name = clean(stripTags(balloon.match(/<strong[^>]*>([\s\S]*?)<\/strong>/i)?.[1] ?? ""));
+    const lines = stripTags(balloon)
+      .replace(/\r/g, "")
+      .split(/\n+/)
+      .map((line) => clean(line))
+      .filter(Boolean);
+
+    const district = lines[1] ?? "";
+    const phone = cleanPhone(lines[2] ?? "");
+
+    if (name.length >= 3) {
+      results.push({
+        name,
+        district,
+        address: "",
+        phone,
+        ...(Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : {})
+      });
+    }
+  }
+
   return results;
 }
 

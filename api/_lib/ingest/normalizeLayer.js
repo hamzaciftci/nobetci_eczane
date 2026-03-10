@@ -1,7 +1,6 @@
 import { slugify } from "../slug.js";
 
-// Duty window uses Istanbul time; 08:00 local → 05:00 UTC
-const DUTY_HOUR_UTC = 5;
+// Duty window uses Istanbul time; 00:00 local başlangıç.
 
 export function resolveToday() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -13,7 +12,7 @@ export function resolveToday() {
 }
 
 export function resolveDutyWindow(todayStr) {
-  const dutyStart = new Date(`${todayStr}T0${DUTY_HOUR_UTC}:00:00Z`);
+  const dutyStart = new Date(`${todayStr}T00:00:00+03:00`);
   const dutyEnd = new Date(dutyStart.getTime() + 24 * 60 * 60 * 1000);
   return { dutyStart: dutyStart.toISOString(), dutyEnd: dutyEnd.toISOString() };
 }

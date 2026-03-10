@@ -18,16 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Pharmacy } from "@/types/pharmacy";
 import { extractDistricts, fetchDutyByDistrict, fetchDutyByProvince, fetchDutyDates } from "@/lib/api";
 import { findProvince } from "@/lib/cities";
-
-// Istanbul UTC+3 (DST yok) — duty 08:00'de değişir
-function getActiveDutyDate(): string {
-  const now = new Date();
-  const istMs = now.getTime() + 3 * 60 * 60 * 1000;
-  const ist = new Date(istMs);
-  const duty = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()));
-  if (ist.getUTCHours() < 8) duty.setUTCDate(duty.getUTCDate() - 1);
-  return duty.toISOString().slice(0, 10);
-}
+import { toSlug } from "@/lib/slug";
+import { formatIsoDate, resolveActiveDutyDate } from "@/lib/date";
 
 const TR_DAYS = ["Paz", "Pzt", "Sal", "Çrş", "Prş", "Cum", "Cmt"];
 const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
@@ -46,7 +38,7 @@ export default function CityPage() {
   const navigate = useNavigate();
   const province = findProvince(il || "");
 
-  const TODAY_DUTY = getActiveDutyDate();
+  const TODAY_DUTY = resolveActiveDutyDate();
 
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(ilce || null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // null = bugün
@@ -85,7 +77,18 @@ export default function CityPage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const activeDuty = selectedDistrict ? districtQuery.data : provinceQuery.data;
+  const districtFallbackDuty = useMemo(() => {
+    if (!selectedDistrict || !provinceQuery.data) return null;
+    const filtered = provinceQuery.data.data.filter((item) => toSlug(item.district) === selectedDistrict);
+    if (!filtered.length) return null;
+    return { ...provinceQuery.data, data: filtered };
+  }, [selectedDistrict, provinceQuery.data]);
+
+  const activeDuty = selectedDistrict
+    ? districtQuery.data ?? districtFallbackDuty
+    : provinceQuery.data;
+
+  const hasDistrictFallback = Boolean(selectedDistrict && districtQuery.isError && districtFallbackDuty);
   const districts = useMemo(
     () => extractDistricts(provinceQuery.data?.data ?? activeDuty?.data ?? []),
     [provinceQuery.data?.data, activeDuty?.data]
@@ -96,7 +99,9 @@ export default function CityPage() {
     districts.find((d) => d.slug === selectedDistrict)?.name ?? titleFromSlug(selectedDistrict || "");
 
   const isLoading = provinceQuery.isLoading || (Boolean(selectedDistrict) && districtQuery.isLoading);
-  const hasError = selectedDistrict ? districtQuery.isError && !districtQuery.data : provinceQuery.isError;
+  const hasError = selectedDistrict
+    ? districtQuery.isError && !districtQuery.data && !districtFallbackDuty
+    : provinceQuery.isError;
 
   const printHref = selectedDistrict
     ? `/il/${il}/${selectedDistrict}/yazdir`
@@ -124,9 +129,7 @@ export default function CityPage() {
 
   const availableDates = datesQuery.data ?? [];
   // Gösterilecek tarih metni: header'da
-  const displayDate = new Date(activeTarih + "T00:00:00Z").toLocaleDateString("tr-TR", {
-    day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC"
-  });
+  const displayDate = formatIsoDate(activeTarih);
 
   return (
     <MainLayout>
@@ -177,7 +180,7 @@ export default function CityPage() {
               </Badge>
               {activeDuty?.duty_date && (
                 <Badge variant="secondary" className="rounded-lg font-mono">
-                  {activeDuty.duty_date}
+                  {formatIsoDate(activeDuty.duty_date)}
                 </Badge>
               )}
             </div>
@@ -250,12 +253,18 @@ export default function CityPage() {
           {showMap ? "Haritayı gizle" : "Haritayı göster"}
         </button>
 
+        {hasDistrictFallback && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            İlçe servisi geçici olarak yanıt vermedi. Liste il verisinden filtrelenerek gösteriliyor.
+          </div>
+        )}
+
         {/* Pharmacy list + map */}
-        <ErrorBoundary>
-          {hasError ? (
-            <ErrorState onRetry={handleRefresh} message="Nöbetçi eczane verileri alınamadı." />
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-5">
+        {hasError ? (
+          <ErrorState onRetry={handleRefresh} message="Nöbetçi eczane verileri alınamadı." />
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-5">
+            <ErrorBoundary fallback={<ErrorState onRetry={handleRefresh} message="Eczane listesi yüklenemedi." />}>
               <div className="lg:col-span-3 space-y-4">
                 {isLoading ? (
                   <PharmacySkeletonList count={4} />
@@ -284,15 +293,25 @@ export default function CityPage() {
                   ))
                 )}
               </div>
+            </ErrorBoundary>
 
-              <div className={`lg:col-span-2 ${showMap ? "block" : "hidden lg:block"}`}>
-                <div className="sticky top-20">
+            <div className={`lg:col-span-2 ${showMap ? "block" : "hidden lg:block"}`}>
+              <div className="sticky top-20">
+                <ErrorBoundary
+                  fallback={
+                    <div className="rounded-lg border bg-muted/50 flex items-center justify-center min-h-[200px]">
+                      <div className="text-center text-muted-foreground text-xs">
+                        Harita geçici olarak gösterilemiyor.
+                      </div>
+                    </div>
+                  }
+                >
                   <MapPanel pharmacies={activeDuty?.data ?? []} collapsed={false} />
-                </div>
+                </ErrorBoundary>
               </div>
             </div>
-          )}
-        </ErrorBoundary>
+          </div>
+        )}
 
         {/* Display modes */}
         <div className="mt-8 mb-6 rounded-2xl border border-border bg-card p-5 shadow-card">

@@ -1,5 +1,5 @@
 /**
- * /embed/:il — minimal widget page for embedding in third-party sites via iframe.
+ * /embed/:il[/ilce] — minimal widget page for embedding in third-party sites via iframe.
  *
  * Requirements:
  *  - No header/footer (minimal chrome)
@@ -11,17 +11,26 @@
 
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Phone, Navigation, MapPin, Loader2, ExternalLink, Cross } from "lucide-react";
-import { fetchDutyByProvince } from "@/lib/api";
+import { Phone, Navigation, MapPin, Loader2, ExternalLink } from "lucide-react";
+import { fetchDutyByDistrict, fetchDutyByProvince } from "@/lib/api";
 import { findProvince } from "@/lib/cities";
+import { formatIsoDate } from "@/lib/date";
+import EczaneLogoIcon from "@/components/EczaneLogoIcon";
 
 export default function EmbedWidget() {
-  const { il } = useParams<{ il: string }>();
+  const { il, ilce } = useParams<{ il: string; ilce?: string }>();
   const province = findProvince(il || "");
+  const districtSlug = (ilce || "").trim().toLowerCase();
+  const districtName = districtSlug
+    ? districtSlug
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
+    : null;
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["embed-duty", il],
-    queryFn: () => fetchDutyByProvince(il || ""),
+    queryKey: ["embed-duty", il, districtSlug],
+    queryFn: () => (districtSlug ? fetchDutyByDistrict(il || "", districtSlug) : fetchDutyByProvince(il || "")),
     enabled: Boolean(il),
     staleTime: 1000 * 60 * 5,
   });
@@ -33,13 +42,14 @@ export default function EmbedWidget() {
       {/* Widget header */}
       <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3">
         <div className="flex items-center gap-2">
-          <Cross className="h-4 w-4 text-primary-foreground" />
+          <EczaneLogoIcon className="h-4 w-4 text-primary-foreground" />
           <span className="text-sm font-semibold text-primary-foreground">
-            {province?.name ?? il} — Nöbetçi Eczaneler
+            {province?.name ?? il}
+            {districtName ? ` / ${districtName}` : ""} — Nöbetçi Eczaneler
           </span>
         </div>
         {data?.duty_date && (
-          <span className="text-[10px] text-primary-foreground/70">{data.duty_date}</span>
+          <span className="text-[10px] text-primary-foreground/70">{formatIsoDate(data.duty_date)}</span>
         )}
       </div>
 
@@ -101,7 +111,7 @@ export default function EmbedWidget() {
       {/* Powered by footer */}
       <div className="border-t border-border bg-muted/30 px-4 py-2.5 text-center">
         <a
-          href={`/il/${il}`}
+          href={districtSlug ? `/il/${il}/${districtSlug}` : `/il/${il}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"

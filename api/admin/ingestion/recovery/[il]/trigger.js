@@ -3,6 +3,9 @@ import { ingestProvince } from "../../../../../_lib/ingest.js";
 import { getSingleQueryValue, methodNotAllowed, requireAdmin, sendInternalError, sendJson } from "../../../../../_lib/http.js";
 import { checkRateLimit } from "../../../../../_lib/security.js";
 import { cacheDel, dutyProvinceKey } from "../../../../../_lib/cache.js";
+import { syncCatalogToDb } from "../../../../../_lib/sourceCatalogSync.js";
+import { resolveActiveDutyDate } from "../../../../../_lib/time.js";
+import { logAdminAction } from "../../../../../_lib/adminAudit.js";
 
 // Recovery ingestion can take up to 30 seconds for slow province endpoints
 export const config = { maxDuration: 30 };
@@ -11,7 +14,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     return methodNotAllowed(req, res, ["POST"]);
   }
-  if (!checkRateLimit(req, res)) {
+  if (!await checkRateLimit(req, res)) {
     return;
   }
   if (!requireAdmin(req, res)) {
@@ -35,11 +38,23 @@ export default async function handler(req, res) {
         throw new Error("province_not_found");
       }
 
+      await syncCatalogToDb(db, { provinceSlugs: [ilSlug] });
+
       // Run real ingestion for this province
       return await ingestProvince(db, ilSlug);
     });
 
     await invalidateCache(ilSlug);
+
+    // Audit log — başarılı recovery
+    await withDb((db) =>
+      logAdminAction(db, req, {
+        action:       "ingestion.recovery_trigger",
+        resourceType: "province",
+        resourceId:   ilSlug,
+        payload:      { status: result.status, found: result.found, upserted: result.upserted },
+      })
+    );
 
     return sendJson(res, 200, {
       queued: false,
@@ -61,5 +76,5 @@ export default async function handler(req, res) {
 }
 
 async function invalidateCache(ilSlug) {
-  await cacheDel([dutyProvinceKey(ilSlug)]);
+  await cacheDel([dutyProvinceKey(ilSlug, resolveActiveDutyDate())]);
 }

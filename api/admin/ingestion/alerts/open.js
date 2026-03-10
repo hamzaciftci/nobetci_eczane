@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return methodNotAllowed(req, res, ["GET"]);
   }
-  if (!checkRateLimit(req, res)) {
+  if (!await checkRateLimit(req, res)) {
     return;
   }
   if (!requireAdmin(req, res)) {
@@ -17,17 +17,18 @@ export default async function handler(req, res) {
     const rows = await withDb((db) =>
       db`
         select
-          id,
-          il_slug as il,
-          source_endpoint_id,
-          alert_type,
-          severity,
-          message,
-          payload,
-          created_at
-        from ingestion_alerts
-        where resolved_at is null
-        order by created_at desc
+          ia.id,
+          p.slug as il,
+          ia.source_endpoint_id,
+          ia.alert_type,
+          ia.severity,
+          ia.message,
+          ia.payload,
+          ia.created_at
+        from ingestion_alerts ia
+        join provinces p on p.id = ia.province_id
+        where ia.resolved_at is null
+        order by ia.created_at desc
         limit 200
       `
     );

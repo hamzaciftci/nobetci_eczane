@@ -1,6 +1,6 @@
 import { buildDutyResponse } from "../../_lib/duty.js";
 import { withDb } from "../../_lib/db.js";
-import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../_lib/http.js";
+import { getSingleQueryValue, methodNotAllowed, sendJson, validateSlug, validateTarihRange } from "../../_lib/http.js";
 import { queryDutyFallback, queryDutyForDate, degradedPayload, isViewMissing } from "../../_lib/fallback.js";
 import { resolveActiveDutyDate } from "../../_lib/time.js";
 import {
@@ -14,7 +14,8 @@ export default async function handler(req, res) {
   }
 
   const ilSlug = getSingleQueryValue(req.query.il).toLowerCase();
-  if (!ilSlug) {
+  // SEC-008: il slug karakter seti + uzunluk doğrulaması
+  if (!ilSlug || !validateSlug(ilSlug)) {
     return sendJson(res, 400, { error: "invalid_il" });
   }
 
@@ -25,8 +26,10 @@ export default async function handler(req, res) {
 
   // Geçmiş / gelecek tarih sorgusu: view bypass → duty_records doğrudan
   if (tarih && tarih !== TODAY) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) {
-      return sendJson(res, 400, { error: "invalid_tarih" });
+    // SEC-006: Format + aralık doğrulaması (±90 gün)
+    const tarihCheck = validateTarihRange(tarih, TODAY);
+    if (!tarihCheck.valid) {
+      return sendJson(res, 400, { error: tarihCheck.error });
     }
     const cacheKey = dutyProvinceDateKey(ilSlug, tarih);
     try {
@@ -43,7 +46,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const cacheKey = dutyProvinceKey(ilSlug);
+  const cacheKey = dutyProvinceKey(ilSlug, TODAY);
 
   try {
     const cached = await cacheGet(cacheKey);

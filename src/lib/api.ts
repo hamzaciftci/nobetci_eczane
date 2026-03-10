@@ -205,8 +205,9 @@ function mapDutyRecord(record: DutyRecordDto, index: number, distanceKm?: number
 }
 
 function resolveAdminHeaders(adminToken?: string): HeadersInit {
-  const envToken = (import.meta.env.VITE_ADMIN_API_TOKEN ?? "").trim();
-  const token = (adminToken ?? envToken).trim();
+  // SEC-001: VITE_ prefixli env değişkeni bundle'a gömüldüğünden kullanılmıyor.
+  // Token yalnızca AdminPage'deki manuel giriş formu (sessionStorage) üzerinden sağlanır.
+  const token = (adminToken ?? "").trim();
   return token ? { "Authorization": `Bearer ${token}` } : {};
 }
 

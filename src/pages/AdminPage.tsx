@@ -20,9 +20,10 @@ const AdminPage = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // SEC-001: VITE_ADMIN_API_TOKEN env fallback'i kaldırıldı — bundle exposure riski.
+    // Token yalnızca sayfa içi formdan ve sessionStorage'dan alınır.
     const stored = window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? "";
-    const envValue = (import.meta.env.VITE_ADMIN_API_TOKEN ?? "").trim();
-    setAdminToken(stored || envValue);
+    setAdminToken(stored);
   }, []);
 
   const fetchData = useCallback(async () => {

@@ -1,7 +1,10 @@
 import { resolveActiveDutyDate } from "../time.js";
 import { logRun } from "./loggingLayer.js";
-import { normalizeText, resolveDistrictId, resolveDutyWindow } from "./normalizeLayer.js";
+import { normalizeText, resolveDutyWindow } from "./normalizeLayer.js";
 import { cacheDel, dutyProvinceKey, dutyDistrictKey } from "../cache.js";
+import { resolveDistrictWithConfidence } from "../normalize/district.js";
+import { normalizePharmacyName } from "../normalize/pharmacyName.js";
+import { computeConfidenceScore } from "../matching/scorer.js";
 
 export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   const districts = await sql`
@@ -16,16 +19,32 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   const errors = [];
   const seenDistricts = new Set();
   const upsertedPharmacyIds = [];
+  const districtResolutionStats = { exact: 0, normalized: 0, alias: 0, fuzzy: 0, fallback: 0, none: 0 };
+
+  // Kaynak otoritesi — confidence score için
+  const authorityWeight = Number(ep.authority_weight) || 5;
 
   for (const row of rows) {
     try {
-      const districtId = resolveDistrictId(districts, row.district);
+      const { id: districtId, confidence: districtConfidence } =
+        resolveDistrictWithConfidence(districts, row.district);
+
       if (!districtId) {
         errors.push(`no_district:${row.name}`);
+        districtResolutionStats.none++;
         continue;
       }
 
-      const normName = normalizeText(row.name);
+      // İstatistik say
+      districtResolutionStats[districtConfidence] = (districtResolutionStats[districtConfidence] || 0) + 1;
+
+      // Fallback logla (exact/normalized/alias dışı)
+      if (districtConfidence === "fallback" || districtConfidence === "fuzzy") {
+        errors.push(`district_${districtConfidence}:${row.name}:${(row.district || "").trim()}`);
+      }
+
+      // Normalize edilmiş isim — DB unique constraint için
+      const normName = normalizePharmacyName(row.name) || normalizeText(row.name);
 
       const [ph] = await sql`
         INSERT INTO pharmacies (
@@ -66,6 +85,14 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
       seenDistricts.add(districtId);
       upsertedPharmacyIds.push(ph.id);
 
+      // Dinamik confidence score
+      const confidenceScore = computeConfidenceScore({
+        matchSimilarity:         1.0,  // Kaynaktan direkt geliyor, exact kabul
+        sourceAuthorityWeight:   authorityWeight,
+        districtConfidence,
+        verificationSourceCount: 1,    // ON CONFLICT'te +1 yapılıyor
+      });
+
       const [dr] = await sql`
         INSERT INTO duty_records (
           id, pharmacy_id, province_id, district_id,
@@ -77,14 +104,14 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
           gen_random_uuid(),
           ${ph.id}, ${ep.province_id}, ${districtId},
           ${today}, ${dutyStart}, ${dutyEnd},
-          80, 1, now(), false, now(), now()
+          ${confidenceScore}, 1, now(), false, now(), now()
         )
         ON CONFLICT (pharmacy_id, duty_date) DO UPDATE SET
           last_verified_at          = now(),
           updated_at                = now(),
           district_id               = EXCLUDED.district_id,
           is_degraded               = false,
-          confidence_score          = GREATEST(duty_records.confidence_score, 80),
+          confidence_score          = GREATEST(duty_records.confidence_score, ${confidenceScore}),
           verification_source_count = duty_records.verification_source_count + 1
         RETURNING id
       `;
@@ -98,9 +125,9 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
           ${dr.id}, ${ep.source_id}, ${ep.endpoint_url},
           now(),
           ${JSON.stringify({
-            name: row.name,
-            address: row.address,
-            phone: row.phone,
+            name:     row.name,
+            address:  row.address,
+            phone:    row.phone,
             district: row.district,
             ...(row.lat != null ? { lat: row.lat, lng: row.lng } : {})
           })}::jsonb
@@ -133,13 +160,11 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
   const status = upserted === 0 ? "failed" : upserted < rows.length ? "partial" : "success";
 
   // Başarılı/kısmi ingest sonrası Redis önbelleğini temizle.
-  // Böylece bir sonraki API isteği hemen taze veriyi DB'den çeker
-  // (önceki stale cache 10 dakika daha servis edilmez).
   if (upserted > 0) {
     try {
       const keysToDelete = [
-        dutyProvinceKey(ilSlug),
-        ...districts.map((d) => dutyDistrictKey(ilSlug, d.slug)),
+        dutyProvinceKey(ilSlug, today),
+        ...districts.map((d) => dutyDistrictKey(ilSlug, d.slug, today)),
       ];
       await cacheDel(keysToDelete);
     } catch {
@@ -152,18 +177,18 @@ export async function upsertRows(sql, ep, ilSlug, rows, httpStatus, started) {
     ep.endpoint_id,
     status,
     httpStatus,
-    errors.length ? errors.slice(0, 5).join("; ") : null,
-    ilSlug
+    errors.length ? errors.slice(0, 5).join("; ") : null
   );
 
   return {
     status,
     il: ilSlug,
-    found: rows.length,
+    found:             rows.length,
     upserted,
-    elapsed_ms: Date.now() - started,
-    expected_count: districts.length,
+    elapsed_ms:        Date.now() - started,
+    expected_count:    districts.length,
     covered_districts: seenDistricts.size,
+    district_resolution: districtResolutionStats,
     ...(errors.length ? { errors: errors.slice(0, 3) } : {})
   };
 }

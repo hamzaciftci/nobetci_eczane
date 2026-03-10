@@ -1,5 +1,47 @@
+import { timingSafeEqual } from "crypto";
+
 // NODE_ENV tanımlı değilse veya "development" değilse production modunda say (fail-safe).
 const IS_PROD = process.env.NODE_ENV !== "development";
+
+// ---------------------------------------------------------------------------
+// Input validation helpers (SEC-006, SEC-008)
+// ---------------------------------------------------------------------------
+
+/**
+ * İl/ilçe slug'larını doğrula.
+ * Geçerli format: küçük harf Latin + tire, 2-40 karakter, rakamla başlamaz.
+ * @param {string} slug
+ * @returns {boolean}
+ */
+export function validateSlug(slug) {
+  return typeof slug === "string" && /^[a-z][a-z0-9-]{1,39}$/.test(slug);
+}
+
+/**
+ * Tarih parametresini hem format hem aralık açısından doğrula.
+ * Format: YYYY-MM-DD
+ * Aralık: bugünden MAX_PAST_DAYS öncesi ile MAX_FUTURE_DAYS sonrası arası
+ * @param {string} tarih     - "YYYY-MM-DD" formatında tarih
+ * @param {string} today     - "YYYY-MM-DD" formatında referans tarih (resolveActiveDutyDate())
+ * @returns {{ valid: boolean, error?: string }}
+ */
+export function validateTarihRange(tarih, today) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) {
+    return { valid: false, error: "invalid_tarih_format" };
+  }
+  const MAX_PAST_DAYS  = 90;
+  const MAX_FUTURE_DAYS = 7;
+  const todayMs   = new Date(today).getTime();
+  const tarihMs   = new Date(tarih).getTime();
+  const diffDays  = (todayMs - tarihMs) / 86_400_000;  // pozitif = geçmiş
+  if (diffDays > MAX_PAST_DAYS) {
+    return { valid: false, error: "tarih_too_old" };
+  }
+  if (diffDays < -MAX_FUTURE_DAYS) {
+    return { valid: false, error: "tarih_too_future" };
+  }
+  return { valid: true };
+}
 
 export function sendJson(res, status, payload) {
   res.status(status);
@@ -28,8 +70,13 @@ export async function parseJsonBody(req) {
     return safeJsonParse(req.body);
   }
 
-  const raw = await readStream(req);
-  return safeJsonParse(raw);
+  try {
+    const raw = await readStream(req);
+    return safeJsonParse(raw);
+  } catch (err) {
+    if (err.statusCode === 413) throw err; // caller'a ilet — 413 response için
+    return {};
+  }
 }
 
 /**
@@ -60,7 +107,7 @@ export function requireAdmin(req, res) {
   }
 
   const provided = authHeader.slice(7).trim();
-  if (provided !== expected) {
+  if (!timingSafeCompare(provided, expected)) {
     logAuthFailure(req, "invalid_token");
     sendJson(res, 403, { error: "forbidden" });
     return false;
@@ -99,12 +146,38 @@ function safeJsonParse(raw) {
   }
 }
 
+const BODY_SIZE_LIMIT = 1 * 1024 * 1024; // 1 MB
+
 function readStream(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
+    let total = 0;
     req
-      .on("data", (chunk) => chunks.push(chunk))
+      .on("data", (chunk) => {
+        total += chunk.length;
+        // Body size limit — aşıldığında stream'i yok et ve 413 ile reddet.
+        if (total > BODY_SIZE_LIMIT) {
+          req.destroy();
+          reject(Object.assign(new Error("request_body_too_large"), { statusCode: 413 }));
+          return;
+        }
+        chunks.push(chunk);
+      })
       .on("end", () => resolve(Buffer.concat(chunks).toString("utf8")))
       .on("error", reject);
   });
+}
+
+/**
+ * Sabit zamanlı string karşılaştırması (SEC-003).
+ * timingSafeEqual uzunluk farkına karşı da güvenli olabilmek için
+ * her iki tarafı da sabit boyutlu buffer'a kopyalar.
+ */
+function timingSafeCompare(a, b) {
+  const BUF_SIZE = 512;
+  const bufA = Buffer.alloc(BUF_SIZE);
+  const bufB = Buffer.alloc(BUF_SIZE);
+  Buffer.from(String(a ?? "")).copy(bufA);
+  Buffer.from(String(b ?? "")).copy(bufB);
+  return timingSafeEqual(bufA, bufB);
 }

@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Phone, RefreshCcw, Maximize, Minimize, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDutyByDistrict, fetchDutyByProvince } from "@/lib/api";
-import { formatTimeAgo } from "@/lib/date";
+import { formatIsoDate, formatTimeAgo, resolveActiveDutyDate } from "@/lib/date";
 
 const ScreenPage = () => {
   const { il, ilce } = useParams<{ il: string; ilce?: string }>();
@@ -59,12 +59,7 @@ const ScreenPage = () => {
     return () => document.removeEventListener("keydown", handler);
   }, [toggleFullscreen]);
 
-  const today = now.toLocaleDateString("tr-TR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
+  const today = formatIsoDate(resolveActiveDutyDate(now));
   const time = now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 
   return (

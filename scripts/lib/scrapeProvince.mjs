@@ -9,8 +9,11 @@
 
 import {
   fetchAnkaraRows,
+  fetchDutyFormHtml,
   fetchIstanbulRows,
   fetchOrduRows,
+  fetchOsmaniyeHtml,
+  fetchUsakRows,
   fetchResource,
   FETCH_TIMEOUT_MS,
 } from "../../api/_lib/ingest/fetchLayer.js";
@@ -22,6 +25,9 @@ import {
 
 /** Scrape timeout — fetch timeout'tan biraz daha uzun */
 const SCRAPE_TIMEOUT_MS = FETCH_TIMEOUT_MS + 3_000;
+const DUTY_FORM_FALLBACK_PARSER_KEYS = new Set([
+  // Opt-in only. Keep empty by default to prevent false positives across 81 provinces.
+]);
 
 /**
  * Belirtilen endpoint için canlı kaynaktan eczane isimlerini çeker.
@@ -105,6 +111,45 @@ async function _scrape(ep, ilSlug) {
     };
   }
 
+  // Uşak: özel AJAX akışı
+  if (ep.parser_key === "usak_ajax_v1") {
+    const { rows, httpStatus, error } = await fetchUsakRows(ep.endpoint_url);
+    if (error && !rows.length) {
+      return { names: [], rawRows: [], httpStatus, error };
+    }
+    return {
+      names: rows.map((r) => r.name).filter(Boolean),
+      rawRows: rows,
+      httpStatus,
+      error: null,
+    };
+  }
+
+  // Osmaniye: resmi sitede güncel liste POST form ile geliyor
+  if (ep.parser_key === "osmaniye_eo_v1") {
+    const { html, httpStatus, error } = await fetchOsmaniyeHtml(ep.endpoint_url);
+    if (error && !html) {
+      return { names: [], rawRows: [], httpStatus, error };
+    }
+    let rows = [];
+    try {
+      rows = parseHtmlPharmacies(html, ep.parser_key);
+    } catch (err) {
+      return {
+        names: [],
+        rawRows: [],
+        httpStatus,
+        error: `parse_error: ${err.message}`,
+      };
+    }
+    return {
+      names: rows.map((r) => r.name).filter(Boolean),
+      rawRows: rows,
+      httpStatus,
+      error: null,
+    };
+  }
+
   // Standart akış: fetch → parse
   let html = null;
   let jsonData = null;
@@ -134,6 +179,17 @@ async function _scrape(ep, ilSlug) {
       rows = parseJsonPharmacies(jsonData, ep.parser_key);
     } else {
       rows = parseHtmlPharmacies(html, ep.parser_key);
+
+      if (DUTY_FORM_FALLBACK_PARSER_KEYS.has(ep.parser_key)) {
+        const formResult = await fetchDutyFormHtml(ep.endpoint_url, html);
+        if (formResult.usedForm && !formResult.error && formResult.html) {
+          const formRows = parseHtmlPharmacies(formResult.html, ep.parser_key);
+          if (formRows.length > 0) {
+            rows = formRows;
+            httpStatus = formResult.httpStatus ?? httpStatus;
+          }
+        }
+      }
 
       // AJAX fallback (bazı iller)
       if (rows.length === 0) {

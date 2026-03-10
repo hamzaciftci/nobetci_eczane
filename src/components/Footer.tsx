@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Cross, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
+import EczaneLogoIcon from "@/components/EczaneLogoIcon";
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Cross className="h-4 w-4 text-primary-foreground" />
+                <EczaneLogoIcon className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="text-base font-bold text-foreground">Nöbetçi Eczane</span>
             </div>

@@ -6,11 +6,24 @@ function getRedisClient() {
   if (!clientPromise) {
     const url = (process.env.REDIS_URL || "").trim();
     if (!url) return null;
-    clientPromise = createClient({ url, socket: { tls: process.env.REDIS_TLS === "1" } })
+    // SEC-010: TLS auto-detect — rediss:// scheme → TLS zorunlu.
+    // REDIS_TLS=1 backward-compat için hâlâ geçerli ama artık ikincil kaynak.
+    const tlsByScheme = url.startsWith("rediss://");
+    const tlsByEnv    = process.env.REDIS_TLS === "1";
+    clientPromise = createClient({ url, socket: { tls: tlsByScheme || tlsByEnv } })
       .on("error", (err) => console.error("[redis] error", err?.message))
       .connect();
   }
   return clientPromise;
+}
+
+/**
+ * SEC-004: Rate limiter için doğrudan Redis client döndürür.
+ * Çağıran kendi try/catch'ini yönetir.
+ * @returns {Promise<import("redis").RedisClientType | null>}
+ */
+export async function getRedisRateLimitClient() {
+  return getRedisClient(); // clientPromise (veya null)
 }
 
 export const TTL_SECONDS = 600;              // Normal veri: 10 dakika
@@ -57,12 +70,12 @@ export async function cacheDel(keys) {
   }
 }
 
-export function dutyProvinceKey(ilSlug) {
-  return `duty:${ilSlug}`;
+export function dutyProvinceKey(ilSlug, date = "today") {
+  return `duty:${ilSlug}:${date}`;
 }
 
-export function dutyDistrictKey(ilSlug, ilceSlug) {
-  return `duty:${ilSlug}:${ilceSlug}`;
+export function dutyDistrictKey(ilSlug, ilceSlug, date = "today") {
+  return `duty:${ilSlug}:${ilceSlug}:${date}`;
 }
 
 export function nearestKey(lat, lng) {
@@ -79,6 +92,6 @@ export function dutyDistrictDateKey(ilSlug, ilceSlug, date) {
   return `duty:${ilSlug}:${ilceSlug}:${date}`;
 }
 
-export function dutyDatesKey(ilSlug) {
-  return `tarihler:${ilSlug}`;
+export function dutyDatesKey(ilSlug, date = "today") {
+  return `tarihler:${ilSlug}:${date}`;
 }

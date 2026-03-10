@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CitySelector from "@/components/CitySelector";
 import MainLayout from "@/components/MainLayout";
+import { formatIsoDate, resolveActiveDutyDate } from "@/lib/date";
 
 const features = [
   {
@@ -41,12 +42,7 @@ const popularCities = [
 ];
 
 export default function HomePage() {
-  const today = new Date().toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    weekday: "long",
-  });
+  const today = formatIsoDate(resolveActiveDutyDate());
 
   return (
     <MainLayout>

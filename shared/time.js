@@ -1,16 +1,15 @@
 /**
  * Canonical duty date resolution — JavaScript runtime.
  *
- * Nöbet dönemi: 08:00 Istanbul'dan ertesi gün 08:00'a kadar sürer.
- *   • Saat < 08:00 → bir önceki günün nöbet listesi aktif
- *   • Saat >= 08:00 → bugünün nöbet listesi aktif
+ * Aktif nöbet tarihi: Istanbul saatine göre takvim günü.
+ *   • Saat >= 00:00 → bugünün tarihi aktif
  *
  * Bu mantık PostgreSQL'deki resolve_active_duty_date() fonksiyonuyla
  * birebir eşleşmelidir. İkisinde değişiklik yapılırken birlikte güncelleyin.
  *
  * Test senaryoları:
- *   07:59 Istanbul → döner: dün   (YYYY-MM-[D-1])
- *   08:00 Istanbul → döner: bugün (YYYY-MM-DD)
+ *   00:00 Istanbul → döner: bugün (YYYY-MM-DD)
+ *   07:59 Istanbul → döner: bugün (YYYY-MM-DD)
  *   23:59 Istanbul → döner: bugün (YYYY-MM-DD)
  */
 export function resolveActiveDutyDate(now = new Date()) {
@@ -34,10 +33,6 @@ export function resolveActiveDutyDate(now = new Date()) {
     Number(parts.month) - 1,
     Number(parts.day)
   ));
-
-  if (Number(parts.hour) < 8) {
-    base.setUTCDate(base.getUTCDate() - 1);
-  }
 
   return base.toISOString().slice(0, 10); // "YYYY-MM-DD"
 }

@@ -1,12 +1,13 @@
 import { withDb } from "../../../../../_lib/db.js";
 import { getSingleQueryValue, methodNotAllowed, parseJsonBody, requireAdmin, sendInternalError, sendJson } from "../../../../../_lib/http.js";
 import { checkRateLimit } from "../../../../../_lib/security.js";
+import { logAdminAction } from "../../../../../_lib/adminAudit.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return methodNotAllowed(req, res, ["POST"]);
   }
-  if (!checkRateLimit(req, res)) {
+  if (!await checkRateLimit(req, res)) {
     return;
   }
   if (!requireAdmin(req, res)) {
@@ -22,8 +23,8 @@ export default async function handler(req, res) {
   const resolvedBy = String(body.resolved_by || "admin").slice(0, 64);
 
   try {
-    const rows = await withDb((db) =>
-      db`
+    const rows = await withDb(async (db) => {
+      const updated = await db`
         update ingestion_alerts
         set
           resolved_at = now(),
@@ -31,8 +32,20 @@ export default async function handler(req, res) {
         where id = ${alertId}
           and resolved_at is null
         returning id
-      `
-    );
+      `;
+
+      if (updated.length > 0) {
+        // Audit log — başarılı alert kapatma
+        await logAdminAction(db, req, {
+          action:       "alert.resolve",
+          actor:        resolvedBy,
+          resourceType: "alert",
+          resourceId:   String(alertId),
+        });
+      }
+
+      return updated;
+    });
 
     return sendJson(res, 200, {
       resolved: rows.length > 0,

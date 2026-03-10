@@ -1,6 +1,6 @@
 import { buildDutyResponse } from "../../../_lib/duty.js";
 import { withDb } from "../../../_lib/db.js";
-import { getSingleQueryValue, methodNotAllowed, sendJson } from "../../../_lib/http.js";
+import { getSingleQueryValue, methodNotAllowed, sendJson, validateSlug, validateTarihRange } from "../../../_lib/http.js";
 import { queryDutyFallback, queryDutyForDate, degradedPayload, isViewMissing } from "../../../_lib/fallback.js";
 import { resolveActiveDutyDate } from "../../../_lib/time.js";
 import {
@@ -13,10 +13,11 @@ export default async function handler(req, res) {
     return methodNotAllowed(req, res, ["GET"]);
   }
 
-  const ilSlug = getSingleQueryValue(req.query.il).toLowerCase();
+  const ilSlug   = getSingleQueryValue(req.query.il).toLowerCase();
   const ilceSlug = getSingleQueryValue(req.query.ilce).toLowerCase();
 
-  if (!ilSlug || !ilceSlug) {
+  // SEC-008: il ve ilçe slug karakter seti + uzunluk doğrulaması
+  if (!ilSlug || !validateSlug(ilSlug) || !ilceSlug || !validateSlug(ilceSlug)) {
     return sendJson(res, 400, { error: "invalid_il_or_ilce" });
   }
 
@@ -26,8 +27,10 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   if (tarih && tarih !== TODAY) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) {
-      return sendJson(res, 400, { error: "invalid_tarih" });
+    // SEC-006: Format + aralık doğrulaması (±90 gün)
+    const tarihCheck = validateTarihRange(tarih, TODAY);
+    if (!tarihCheck.valid) {
+      return sendJson(res, 400, { error: tarihCheck.error });
     }
     const cacheKey = dutyDistrictDateKey(ilSlug, ilceSlug, tarih);
     try {
@@ -44,7 +47,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const cacheKey = dutyDistrictKey(ilSlug, ilceSlug);
+  const cacheKey = dutyDistrictKey(ilSlug, ilceSlug, TODAY);
 
   try {
     const cached = await cacheGet(cacheKey);

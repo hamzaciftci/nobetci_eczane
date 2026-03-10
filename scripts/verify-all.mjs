@@ -23,7 +23,7 @@ import { readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { scrapeProvince } from "./lib/scrapeProvince.mjs";
-import { diffLists, normalizeName, findClosestMatch, normalizeList } from "./lib/normalize.mjs";
+import { classifyDiff, findClosestMatch, normalizeList } from "./lib/normalize.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 
@@ -138,11 +138,10 @@ async function verifyProvince(province) {
   httpStatus = scraped.httpStatus;
 
   // 3. Karşılaştırma
-  const { missing, extra, matched } = diffLists(apiNames, liveNames);
+  const { missing, extra, mismatch, matched } = classifyDiff(apiNames, liveNames);
 
   // Fuzzy öneriler (yakın ama eşleşmeyen isimler)
   const apiSet  = new Set(normalizeList(apiNames));
-  const liveSet = new Set(normalizeList(liveNames));
   const suggestions = missing
     .map((m) => ({ name: m, closest: findClosestMatch(m, apiSet) }))
     .filter((s) => s.closest !== null);
@@ -155,7 +154,7 @@ async function verifyProvince(province) {
     result = "NO_SOURCE_DATA";
   } else if (apiNames.length === 0) {
     result = "NO_API_DATA";
-  } else if (missing.length === 0 && extra.length === 0) {
+  } else if (missing.length === 0 && extra.length === 0 && mismatch.length === 0) {
     result = "PASS";
   } else {
     result = "FAIL";
@@ -170,6 +169,7 @@ async function verifyProvince(province) {
     matched,
     missing,
     extra,
+    mismatch,
     suggestions,
     http_status:  httpStatus,
     api_error:    apiError,
@@ -188,6 +188,9 @@ async function runBatched(items, fn, concurrency, onResult) {
     for (const r of partial) {
       results.push(r);
       if (onResult) onResult(r, results.length, items.length);
+      if (FAIL_FAST && r.result === "FAIL") {
+        return results;
+      }
     }
     if (i + concurrency < items.length) {
       await new Promise((res) => setTimeout(res, 400)); // rate-limit
@@ -235,6 +238,10 @@ function printResult(r, idx, total) {
     console.log(`  ${colorize("ERROR","Fazla (API'de var, Kaynakta yok)")}:`);
     r.extra.forEach((e) => console.log(`    + ${e}`));
   }
+  if (r.mismatch.length > 0) {
+    console.log(`  ${colorize("ERROR","Mismatched (yakın ama farklı)")}:`);
+    r.mismatch.forEach((m) => console.log(`    ≈ ${m.official}  <->  ${m.api} (d=${m.distance})`));
+  }
   if (r.api_error)  console.log(`  API Hatası  : ${r.api_error}`);
   if (r.live_error) console.log(`  Kaynak Hata : ${r.live_error}`);
 
@@ -275,17 +282,12 @@ async function main() {
     console.log(`\nTest edilecek il: ${provinces.length}`);
   }
 
-  let shouldStop = false;
-
   const results = await runBatched(
     provinces,
     verifyProvince,
     CONCURRENCY,
     (r, idx, total) => {
       printResult(r, idx, total);
-      if (FAIL_FAST && r.result === "FAIL") {
-        shouldStop = true;
-      }
     }
   );
 
@@ -315,7 +317,7 @@ async function main() {
         .filter((r) => r.result === "FAIL")
         .forEach((r) => {
           console.log(
-            `    ✗ ${r.slug.padEnd(16)} missing=${r.missing.length}  extra=${r.extra.length}`
+            `    ✗ ${r.slug.padEnd(16)} missing=${r.missing.length}  extra=${r.extra.length}  mismatch=${r.mismatch.length}`
           );
         });
     }
@@ -350,6 +352,7 @@ async function main() {
       matched:     r.matched,
       missing:     r.missing,
       extra:       r.extra,
+      mismatch:    r.mismatch,
       suggestions: r.suggestions,
       http_status: r.http_status,
       errors:      [r.api_error, r.live_error].filter(Boolean),

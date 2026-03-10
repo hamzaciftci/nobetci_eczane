@@ -56,6 +56,7 @@ const App = () => (
               <Route path="/en-yakin" element={<NearestPharmacy />} />
               <Route path="/iletisim" element={<Contact />} />
               <Route path="/sitene-ekle" element={<EmbedPage />} />
+              <Route path="/embed/:il/:ilce" element={<EmbedWidget />} />
               <Route path="/embed/:il" element={<EmbedWidget />} />
 
               {/* ── Utility pages (print / screen display) ─────────── */}

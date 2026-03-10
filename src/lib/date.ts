@@ -1,7 +1,8 @@
 /**
  * Canonical duty date resolution — frontend runtime.
  *
- * Nöbet dönemi: 08:00 Istanbul'dan ertesi gün 08:00'a kadar sürer.
+ * Aktif nöbet tarihi: Istanbul saatine göre takvim günü.
+ *   • 00:00 sonrası yeni gün aktif olur.
  * Backend muadili: shared/time.js → resolveActiveDutyDate()
  * PostgreSQL muadili: resolve_active_duty_date() fonksiyonu
  *
@@ -27,10 +28,6 @@ export function resolveActiveDutyDate(now: Date = new Date()): string {
     Number(parts.month) - 1,
     Number(parts.day)
   ));
-
-  if (Number(parts.hour) < 8) {
-    base.setUTCDate(base.getUTCDate() - 1);
-  }
 
   return base.toISOString().slice(0, 10); // "YYYY-MM-DD"
 }
@@ -75,5 +72,12 @@ export function formatDate(input: string | Date): string {
     year: "numeric",
     timeZone: "Europe/Istanbul"
   }).format(new Date(input));
+}
+
+export function formatIsoDate(value: string | null | undefined): string {
+  if (!value) return "-";
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return value;
+  return `${match[3]}.${match[2]}.${match[1]}`;
 }
 

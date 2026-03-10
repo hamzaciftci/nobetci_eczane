@@ -39,6 +39,7 @@ npm run dev:vercel
 3. Vercel -> Project -> Settings -> Environment Variables:
    - `DATABASE_URL` = Neon connection string
    - `ADMIN_API_TOKEN` = admin endpoint token (onerilir)
+   - `CRON_SECRET` = cron endpoint token (onerilir; Vercel cron Authorization header)
    - `VITE_API_BASE_URL` = bos birakin (same-origin `/api`)
 4. Vercel deploy alin.
 5. Test:
@@ -50,6 +51,8 @@ Notlar:
 - Backend tablolari ilk istekle otomatik olusturulur.
 - 81 il kaydi backend tarafinda otomatik seed edilir.
 - Nobetci kayitlari `duty_records` tablosundan okunur.
+- 81 il resmi kaynak katalogu: `api/_lib/provinceSources.js` (code-level source of truth)
+- Ingest sonrasi otomatik dogruluk diff kontrolu (MISSING/EXTRA/MISMATCH) `ingestion_alerts` tablosuna yazilir.
 - Lokal Vite gelistirmesinde harici backend'e yonlenmek isterseniz `VITE_API_PROXY_TARGET` kullanabilirsiniz.
 - Elle bootstrap icin: `npm run db:init`
 

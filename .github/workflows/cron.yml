@@ -43,19 +43,14 @@ jobs:
   ingest-shard-0:
     name: "Ingest shard 0/4"
     runs-on: ubuntu-latest
-    # Sadece ilgili schedule veya manuel tetiklemede çalış
     if: |
       github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
-      github.event_name == 'schedule' && (
-        contains(github.event.schedule, '0,30') ||
-        contains(github.event.schedule, '0 *')
-      )
+      github.event_name == 'schedule' && contains(github.event.schedule, '0,30')
     steps:
       - name: Trigger ingest shard 0
         run: |
-          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=0&shard_count=4" \
+          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=0&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
             --max-time 65 \
             -w "\nHTTP %{http_code} — %{time_total}s\n"
 
@@ -64,16 +59,12 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
-      github.event_name == 'schedule' && (
-        contains(github.event.schedule, '7,37') ||
-        contains(github.event.schedule, '0 *')
-      )
+      github.event_name == 'schedule' && contains(github.event.schedule, '7,37')
     steps:
       - name: Trigger ingest shard 1
         run: |
-          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=1&shard_count=4" \
+          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=1&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
             --max-time 65 \
             -w "\nHTTP %{http_code} — %{time_total}s\n"
 
@@ -82,16 +73,12 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
-      github.event_name == 'schedule' && (
-        contains(github.event.schedule, '15,45') ||
-        contains(github.event.schedule, '0 *')
-      )
+      github.event_name == 'schedule' && contains(github.event.schedule, '15,45')
     steps:
       - name: Trigger ingest shard 2
         run: |
-          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=2&shard_count=4" \
+          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=2&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
             --max-time 65 \
             -w "\nHTTP %{http_code} — %{time_total}s\n"
 
@@ -100,16 +87,12 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'ingest') ||
-      github.event_name == 'schedule' && (
-        contains(github.event.schedule, '22,52') ||
-        contains(github.event.schedule, '0 *')
-      )
+      github.event_name == 'schedule' && contains(github.event.schedule, '22,52')
     steps:
       - name: Trigger ingest shard 3
         run: |
-          curl -fsS -X POST "${{ env.BASE_URL }}/api/cron/ingest?shard_index=3&shard_count=4" \
+          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=3&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
             --max-time 65 \
             -w "\nHTTP %{http_code} — %{time_total}s\n"
 
@@ -121,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'freshness-check') ||
-      github.event_name == 'schedule' && contains(github.event.schedule, '0 *')
+      github.event_name == 'schedule' && github.event.schedule == '0 * * * *'
     steps:
       - name: Trigger freshness check
         run: |

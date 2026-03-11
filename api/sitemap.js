@@ -72,7 +72,8 @@ async function serveIndex(res) {
   if (cached) return sendXml(res, cached, 3600);
 
   const today = todayIso();
-  const names = ["static", "provinces", "districts", "pharmacies", "blog"];
+  // pharmacies ve blog henüz URL içermediğinden index'e dahil edilmiyor
+  const names = ["static", "provinces", "districts"];
   const sitemaps = names.map((name) => ({
     loc:     `${BASE_URL}/sitemap-${name}.xml`,
     lastmod: today,
@@ -186,7 +187,7 @@ async function servePharmacies(res, page) {
     `);
   } catch { /* tablo/kolon yok */ }
 
-  if (!rows.length && page > 1) return res.status(404).end();
+  if (!rows.length) return res.status(404).end();
 
   const fallback = todayIso();
   const urls = rows.map(({ slug, updated_at }) => ({
@@ -214,6 +215,8 @@ async function serveBlog(res) {
       ORDER BY published_at DESC
     `);
   } catch { /* tablo yok */ }
+
+  if (!rows.length) return res.status(404).end();
 
   const now = Date.now();
   const freshCutoff = now - 90 * 86400 * 1000;

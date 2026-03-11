@@ -49,10 +49,12 @@ jobs:
     steps:
       - name: Trigger ingest shard 0
         run: |
-          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=0&shard_count=4" \
+          HTTP=$(curl -sS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=0&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 65 \
-            -w "\nHTTP %{http_code} — %{time_total}s\n"
+            -o /dev/null -w "%{http_code}")
+          echo "HTTP $HTTP"
+          if [[ "$HTTP" =~ ^4 ]]; then echo "Auth/client error $HTTP"; exit 1; fi
 
   ingest-shard-1:
     name: "Ingest shard 1/4"
@@ -63,10 +65,12 @@ jobs:
     steps:
       - name: Trigger ingest shard 1
         run: |
-          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=1&shard_count=4" \
+          HTTP=$(curl -sS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=1&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 65 \
-            -w "\nHTTP %{http_code} — %{time_total}s\n"
+            -o /dev/null -w "%{http_code}")
+          echo "HTTP $HTTP"
+          if [[ "$HTTP" =~ ^4 ]]; then echo "Auth/client error $HTTP"; exit 1; fi
 
   ingest-shard-2:
     name: "Ingest shard 2/4"
@@ -77,10 +81,12 @@ jobs:
     steps:
       - name: Trigger ingest shard 2
         run: |
-          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=2&shard_count=4" \
+          HTTP=$(curl -sS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=2&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 65 \
-            -w "\nHTTP %{http_code} — %{time_total}s\n"
+            -o /dev/null -w "%{http_code}")
+          echo "HTTP $HTTP"
+          if [[ "$HTTP" =~ ^4 ]]; then echo "Auth/client error $HTTP"; exit 1; fi
 
   ingest-shard-3:
     name: "Ingest shard 3/4"
@@ -91,10 +97,12 @@ jobs:
     steps:
       - name: Trigger ingest shard 3
         run: |
-          curl -fsS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=3&shard_count=4" \
+          HTTP=$(curl -sS "${{ env.BASE_URL }}/api/cron/ingest?shard_index=3&shard_count=4" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 65 \
-            -w "\nHTTP %{http_code} — %{time_total}s\n"
+            -o /dev/null -w "%{http_code}")
+          echo "HTTP $HTTP"
+          if [[ "$HTTP" =~ ^4 ]]; then echo "Auth/client error $HTTP"; exit 1; fi
 
   # ─────────────────────────────────────────────────────────────
   # Freshness check — her saat başı

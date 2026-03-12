@@ -5,6 +5,8 @@ import "./globals.css";
 import { localBusinessSchema, websiteSchema } from "@/app/lib/schema";
 import { SchemaMarkup } from "@/app/components/SchemaMarkup";
 import { NearestCta } from "@/app/components/NearestCta";
+import { EczaneLogoIcon } from "@/app/components/EczaneLogoIcon";
+import { MobileMenu } from "@/app/components/MobileMenu";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -33,6 +35,12 @@ export const metadata: Metadata = {
   },
 };
 
+const navLinks = [
+  { href: "/", label: "Anasayfa" },
+  { href: "/en-yakin", label: "En Yakın" },
+  { href: "/iletisim", label: "İletişim" },
+];
+
 export default function RootLayout({
   children,
 }: {
@@ -40,71 +48,94 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr" className={inter.className}>
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+      <body className="min-h-screen bg-background text-foreground antialiased">
         <SchemaMarkup schemas={[localBusinessSchema(), websiteSchema()]} />
-        {/* ── Header ───────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">💊</span>
-              <span className="font-bold text-gray-900 text-lg leading-tight">
-                Nöbetçi<span className="text-blue-600">Eczane</span>
+
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-xl no-print">
+          <div className="container relative flex h-16 items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                <EczaneLogoIcon className="h-7 w-7 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-bold tracking-tight text-foreground">
+                Nöbetçi Eczane
               </span>
             </Link>
 
-            <nav className="hidden sm:flex items-center gap-6 text-sm font-medium text-gray-600">
-              <Link href="/" className="hover:text-blue-600 transition-colors">
-                Ana Sayfa
-              </Link>
-              <Link href="/en-yakin" className="hover:text-blue-600 transition-colors">
-                En Yakın
-              </Link>
-              <Link href="/iletisim" className="hover:text-blue-600 transition-colors">
-                İletişim
-              </Link>
+            {/* Desktop nav */}
+            <nav className="hidden items-center gap-1 md:flex">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
+
+            {/* Mobile hamburger */}
+            <MobileMenu />
           </div>
         </header>
 
-        {/* ── Main Content ─────────────────────────────────────────── */}
-        <main className="mx-auto max-w-6xl px-4 py-8">
-          {children}
-        </main>
+        {/* ── Main Content ───────────────────────────────────────────── */}
+        <main className="flex-1">{children}</main>
 
-        {/* ── Floating CTA ─────────────────────────────────────────── */}
+        {/* ── Floating CTA ───────────────────────────────────────────── */}
         <NearestCta />
 
-        {/* ── Footer ───────────────────────────────────────────────── */}
-        <footer className="border-t border-gray-200 bg-white mt-16">
-          <div className="mx-auto max-w-6xl px-4 py-8">
-            {/* İl linkleri — iç linkleme için kritik */}
-            <nav aria-label="İl Linkleri" className="mb-6">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Tüm İller
-              </h2>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
-                {[
-                  ["Adana", "adana"], ["Ankara", "ankara"], ["Antalya", "antalya"],
-                  ["Bursa", "bursa"], ["Diyarbakır", "diyarbakir"], ["Eskişehir", "eskisehir"],
-                  ["Gaziantep", "gaziantep"], ["İstanbul", "istanbul"], ["İzmir", "izmir"],
-                  ["Kayseri", "kayseri"], ["Kocaeli", "kocaeli"], ["Konya", "konya"],
-                  ["Malatya", "malatya"], ["Mersin", "mersin"], ["Muğla", "mugla"],
-                  ["Osmaniye", "osmaniye"], ["Samsun", "samsun"], ["Trabzon", "trabzon"],
-                ].map(([name, slug]) => (
-                  <Link
-                    key={slug}
-                    href={`/nobetci-eczane/${slug}`}
-                    className="hover:text-blue-600 hover:underline transition-colors"
-                  >
-                    {name} Nöbetçi Eczane
-                  </Link>
-                ))}
+        {/* ── Footer ─────────────────────────────────────────────────── */}
+        <footer className="border-t border-border bg-surface no-print">
+          <div className="container py-12">
+            <div className="grid gap-8 md:grid-cols-3">
+              {/* Brand */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                    <EczaneLogoIcon className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-base font-bold text-foreground">
+                    Nöbetçi Eczane
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Türkiye genelinde nöbetçi eczane rehberi
+                </p>
               </div>
-            </nav>
 
-            <div className="border-t border-gray-100 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-400">
-              <p>© {new Date().getFullYear()} Bugün Nöbetçi Eczaneler</p>
-              <p>Resmi eczacı odası kaynaklarından alınan güncel veri</p>
+              {/* Disclaimer */}
+              <div className="flex flex-col gap-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Veriler resmi eczacı odalarından alınmaktadır. Gitmeden önce
+                  telefonla arayın. Gece nöbetinde kapı kapalı olabilir, zil
+                  ile hizmet verilebilir.
+                </p>
+              </div>
+
+              {/* Links */}
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/iletisim"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  Yanlış bilgi bildir
+                </Link>
+                <Link
+                  href="/iletisim"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  İletişim
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Nöbetçi Eczane · Bu bir kamu
+              hizmeti projesidir. Bilgilerin doğruluğu garanti edilmez.
             </div>
           </div>
         </footer>

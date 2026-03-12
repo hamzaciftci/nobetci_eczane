@@ -1,21 +1,40 @@
 /**
- * GET /sitemap.xml              → tüm alt sitemap'leri listeleyen index
- * GET /sitemap-{name}.xml       → ilgili alt sitemap
+ * Sitemap Stratejisi — Türkiye Nöbetçi Eczane Dizini
+ * ─────────────────────────────────────────────────────────────────────────────
  *
  * vercel.json rewrites:
- *   /sitemap.xml          → /api/sitemap
+ *   /sitemap.xml          → /api/sitemap          (index)
  *   /sitemap-:name.xml    → /api/sitemap?name=:name
  *
- * Tüm sitemap mantığı tek bir Serverless Function'da toplanmıştır
- * (Vercel Hobby plan: maks 12 function limiti).
+ * Üretilen sitemap'lar:
+ *   /sitemap.xml              → index (tüm alt sitemap'leri listeler)
+ *   /sitemap-static.xml       → ana sayfa + statik sayfalar
+ *   /sitemap-cities.xml       → 81 il sayfası  (/nobetci-eczane/:il)
+ *   /sitemap-districts.xml    → ilçe sayfaları  (/nobetci-eczane/:il/:ilce)
+ *   /sitemap-districts-2.xml  → ilçe sayfaları  (sayfa 2, gerekirse)
+ *
+ * Crawl Verimliliği:
+ *   - Tip bazlı ayrım: şehirler / ilçeler ayrı sitemap
+ *   - lastmod: DB'den gerçek güncelleme tarihi (source_health.last_success_at)
+ *   - changefreq + priority: sayfa tipine göre optimize edildi
+ *   - Redis cache: 1 saat TTL (duty data saatlik güncelleniyor)
+ *   - 1000+ sayfa: tek sitemap'te, sitemapindex ile bölünmüş yapı
+ *
+ * Günlük otomatik güncelleme:
+ *   - lastmod her istek için gerçek zamanlı hesaplanır
+ *   - Redis TTL 3600 → her saat yeni tarih ile yenilenir
+ *   - İngest sonrası sitemap cache'i temizlenebilir (CACHE_KEY ile)
  */
-import { withDb } from "./_lib/db.js";
-import { cacheGet, cacheSet, cacheDel } from "./_lib/cache.js";
 
-const BASE_URL  = "https://bugunnobetcieczaneler.com";
-const PAGE_SIZE = 500;
+import { withDb }           from "./_lib/db.js";
+import { cacheGet, cacheSet } from "./_lib/cache.js";
 
-// ─── XML Helpers ──────────────────────────────────────────────────────────────
+// ─── Sabitler ─────────────────────────────────────────────────────────────────
+
+const BASE_URL  = "https://www.bugunnobetcieczaneler.com";
+const PAGE_SIZE = 1000;   // Google limiti: 50 000 URL / sitemap
+
+// ─── Yardımcılar ──────────────────────────────────────────────────────────────
 
 function escapeXml(str) {
   return String(str)
@@ -32,67 +51,110 @@ function xmlDoc(body) {
 
 function buildSitemapIndex(sitemaps) {
   const entries = sitemaps.map(({ loc, lastmod }) =>
-    `  <sitemap>\n    <loc>${escapeXml(loc)}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ""}\n  </sitemap>`
+    `  <sitemap>\n    <loc>${escapeXml(loc)}</loc>${
+      lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ""
+    }\n  </sitemap>`
   );
-  return xmlDoc(`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</sitemapindex>`);
+  return xmlDoc(
+    `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</sitemapindex>`
+  );
 }
 
 function buildUrlSet(urls) {
   const entries = urls.map(({ loc, lastmod, changefreq, priority }) => {
-    const parts = [`    <loc>${escapeXml(loc.startsWith("http") ? loc : `${BASE_URL}${loc.startsWith("/") ? loc : `/${loc}`}`)}</loc>`];
-    if (lastmod)       parts.push(`    <lastmod>${lastmod}</lastmod>`);
-    if (changefreq)    parts.push(`    <changefreq>${changefreq}</changefreq>`);
-    if (priority != null) parts.push(`    <priority>${priority}</priority>`);
+    const full = loc.startsWith("http") ? loc : `${BASE_URL}${loc}`;
+    const parts = [`    <loc>${escapeXml(full)}</loc>`];
+    if (lastmod)            parts.push(`    <lastmod>${lastmod}</lastmod>`);
+    if (changefreq)         parts.push(`    <changefreq>${changefreq}</changefreq>`);
+    if (priority != null)   parts.push(`    <priority>${priority}</priority>`);
     return `  <url>\n${parts.join("\n")}\n  </url>`;
   });
-  return xmlDoc(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>`);
+  return xmlDoc(
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>`
+  );
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+/** Bugünün tarihini İstanbul saatiyle (UTC+3) döner → "YYYY-MM-DD" */
+function todayIstanbul() {
+  const now = new Date();
+  const offset = 3 * 60;   // UTC+3 dakika
+  const istMs = now.getTime() + (now.getTimezoneOffset() + offset) * 60_000;
+  return new Date(istMs).toISOString().slice(0, 10);
 }
 
 function toIsoDate(d) {
-  if (!d) return todayIso();
+  if (!d) return todayIstanbul();
   return new Date(d).toISOString().slice(0, 10);
 }
 
 function sendXml(res, xml, maxAge = 3600) {
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   res.setHeader("Cache-Control", `public, s-maxage=${maxAge}, stale-while-revalidate=60`);
-  res.status(200);
-  res.send(xml);
+  res.status(200).send(xml);
 }
 
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// ─── Sitemap Handlers ─────────────────────────────────────────────────────────
 
+/**
+ * /sitemap.xml — Sitemapindex
+ *
+ * Yapı (Google'ın önerdiği tip bazlı ayrım):
+ *   sitemap-static.xml       → statik sayfalar (değişmez)
+ *   sitemap-cities.xml       → 81 il (saatlik güncelleme)
+ *   sitemap-districts.xml    → ilçeler (saatlik güncelleme)
+ *   sitemap-districts-2.xml  → 2. ilçe sayfası (gerekirse)
+ *
+ * İlçe sayısı DB'den sorgulanır; kaç sayfa gerektiği dinamik belirlenir.
+ */
 async function serveIndex(res) {
-  const CACHE_KEY = "sitemap:index";
+  const CACHE_KEY = "sitemap:index:v2";
   const cached = await cacheGet(CACHE_KEY);
   if (cached) return sendXml(res, cached, 3600);
 
-  const today = todayIso();
-  // pharmacies ve blog henüz URL içermediğinden index'e dahil edilmiyor
-  const names = ["static", "provinces", "districts"];
-  const sitemaps = names.map((name) => ({
-    loc:     `${BASE_URL}/sitemap-${name}.xml`,
-    lastmod: today,
-  }));
+  const today = todayIstanbul();
+
+  // Kaç ilçe var? → kaç sayfa districts sitemap gerekli?
+  let totalDistricts = 0;
+  try {
+    const [row] = await withDb((db) => db`
+      SELECT COUNT(*)::int AS cnt
+      FROM districts d
+      JOIN provinces p ON p.id = d.province_id
+    `);
+    totalDistricts = row?.cnt ?? 0;
+  } catch {
+    totalDistricts = 1000; // fallback estimate
+  }
+
+  const districtPages = Math.max(1, Math.ceil(totalDistricts / PAGE_SIZE));
+
+  // Sitemap listesi
+  const sitemaps = [
+    { loc: `${BASE_URL}/sitemap-static.xml`,    lastmod: today },
+    { loc: `${BASE_URL}/sitemap-cities.xml`,     lastmod: today },
+    ...Array.from({ length: districtPages }, (_, i) => {
+      const page = i + 1;
+      const name = page === 1 ? "districts" : `districts-${page}`;
+      return { loc: `${BASE_URL}/sitemap-${name}.xml`, lastmod: today };
+    }),
+  ];
 
   const xml = buildSitemapIndex(sitemaps);
   await cacheSet(CACHE_KEY, xml, 3600);
   return sendXml(res, xml, 3600);
 }
 
+/** /sitemap-static.xml — Ana sayfa + sabit sayfalar */
 async function serveStatic(res) {
-  const CACHE_KEY = "sitemap:static";
+  const CACHE_KEY = "sitemap:static:v2";
   const cached = await cacheGet(CACHE_KEY);
   if (cached) return sendXml(res, cached, 86400);
 
-  const lastmod = todayIso();
+  const today = todayIstanbul();
   const urls = [
-    { loc: "/",         changefreq: "hourly",  priority: "1.0", lastmod },
-    { loc: "/iletisim", changefreq: "monthly", priority: "0.4", lastmod },
+    { loc: "/",         changefreq: "hourly",  priority: "1.0", lastmod: today },
+    { loc: "/en-yakin", changefreq: "daily",   priority: "0.6", lastmod: today },
+    { loc: "/iletisim", changefreq: "monthly", priority: "0.3", lastmod: today },
   ];
 
   const xml = buildUrlSet(urls);
@@ -100,28 +162,111 @@ async function serveStatic(res) {
   return sendXml(res, xml, 86400);
 }
 
-async function serveProvinces(res) {
-  const CACHE_KEY = "sitemap:provinces";
+/**
+ * /sitemap-cities.xml — 81 il sayfası
+ *
+ * URL örneği : /nobetci-eczane/osmaniye
+ * lastmod    : source_health tablosundaki son başarılı ingest tarihi
+ * changefreq : hourly (veriler her saat değişiyor)
+ * priority   : 0.9 (sitelerin en önemli sayfaları)
+ */
+async function serveCities(res) {
+  const CACHE_KEY = "sitemap:cities:v2";
   const cached = await cacheGet(CACHE_KEY);
   if (cached) return sendXml(res, cached, 3600);
 
   let rows;
   try {
     rows = await withDb((db) => db`
-      SELECT p.slug, sh.last_success_at
+      SELECT p.slug, MAX(sh.last_success_at) AS last_success_at
       FROM provinces p
       LEFT JOIN source_health sh ON sh.province_id = p.id
+      GROUP BY p.slug
       ORDER BY p.slug
     `);
   } catch {
-    // source_health tablosu henüz oluşturulmamışsa sadece slug'larla devam et
-    rows = await withDb((db) => db`SELECT slug, null::timestamptz AS last_success_at FROM provinces ORDER BY slug`);
+    // source_health henüz yoksa sadece slug'larla devam et
+    try {
+      rows = await withDb((db) => db`
+        SELECT slug, NULL::timestamptz AS last_success_at
+        FROM provinces
+        ORDER BY slug
+      `);
+    } catch {
+      rows = [];
+    }
   }
 
-  const fallback = todayIso();
+  if (!rows.length) return res.status(404).end();
+
+  const today = todayIstanbul();
   const urls = rows.map(({ slug, last_success_at }) => ({
-    loc:        `/il/${slug}`,
-    lastmod:    last_success_at ? toIsoDate(last_success_at) : fallback,
+    loc:        `/nobetci-eczane/${slug}`,
+    lastmod:    last_success_at ? toIsoDate(last_success_at) : today,
+    changefreq: "hourly",
+    priority:   "0.9",
+  }));
+
+  const xml = buildUrlSet(urls);
+  await cacheSet(CACHE_KEY, xml, 3600);
+  return sendXml(res, xml, 3600);
+}
+
+/**
+ * /sitemap-districts.xml + /sitemap-districts-N.xml — İlçe sayfaları
+ *
+ * URL örneği : /nobetci-eczane/osmaniye/duzici
+ * lastmod    : source_health tablosundaki son başarılı ingest tarihi
+ * changefreq : hourly
+ * priority   : 0.8
+ *
+ * Sayfalama: PAGE_SIZE = 1000
+ * Türkiye'de ~973 ilçe var → tek sayfaya sığar
+ */
+async function serveDistricts(res, page) {
+  const CACHE_KEY = `sitemap:districts:v2:page:${page}`;
+  const cached = await cacheGet(CACHE_KEY);
+  if (cached) return sendXml(res, cached, 3600);
+
+  let rows;
+  try {
+    rows = await withDb((db) => db`
+      SELECT
+        d.slug  AS ilce_slug,
+        p.slug  AS il_slug,
+        MAX(sh.last_success_at) AS last_success_at
+      FROM districts d
+      JOIN provinces p   ON p.id = d.province_id
+      LEFT JOIN source_health sh ON sh.province_id = p.id
+      GROUP BY d.slug, p.slug
+      ORDER BY p.slug, d.slug
+      LIMIT  ${PAGE_SIZE}
+      OFFSET ${(page - 1) * PAGE_SIZE}
+    `);
+  } catch {
+    try {
+      rows = await withDb((db) => db`
+        SELECT
+          d.slug AS ilce_slug,
+          p.slug AS il_slug,
+          NULL::timestamptz AS last_success_at
+        FROM districts d
+        JOIN provinces p ON p.id = d.province_id
+        ORDER BY p.slug, d.slug
+        LIMIT  ${PAGE_SIZE}
+        OFFSET ${(page - 1) * PAGE_SIZE}
+      `);
+    } catch {
+      rows = [];
+    }
+  }
+
+  if (!rows.length) return res.status(404).end();
+
+  const today = todayIstanbul();
+  const urls = rows.map(({ il_slug, ilce_slug, last_success_at }) => ({
+    loc:        `/nobetci-eczane/${il_slug}/${ilce_slug}`,
+    lastmod:    last_success_at ? toIsoDate(last_success_at) : today,
     changefreq: "hourly",
     priority:   "0.8",
   }));
@@ -131,52 +276,8 @@ async function serveProvinces(res) {
   return sendXml(res, xml, 3600);
 }
 
-async function serveDistricts(res, page) {
-  const CACHE_KEY = `sitemap:districts:page:${page}`;
-  const cached = await cacheGet(CACHE_KEY);
-  if (cached) return sendXml(res, cached, 3600);
-
-  let rows;
-  try {
-    rows = await withDb((db) => db`
-      SELECT d.slug AS ilce_slug, p.slug AS il_slug, sh.last_success_at
-      FROM districts d
-      JOIN provinces p ON p.id = d.province_id
-      LEFT JOIN source_health sh ON sh.province_id = p.id
-      ORDER BY p.slug, d.slug
-      LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}
-    `);
-  } catch {
-    rows = await withDb((db) => db`
-      SELECT d.slug AS ilce_slug, p.slug AS il_slug, null::timestamptz AS last_success_at
-      FROM districts d
-      JOIN provinces p ON p.id = d.province_id
-      ORDER BY p.slug, d.slug
-      LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}
-    `);
-  }
-
-  if (!rows.length && page > 1) return res.status(404).end();
-
-  const fallback = todayIso();
-  const urls = rows.map(({ il_slug, ilce_slug, last_success_at }) => ({
-    loc:        `/il/${il_slug}/${ilce_slug}`,
-    lastmod:    last_success_at ? toIsoDate(last_success_at) : fallback,
-    changefreq: "hourly",
-    priority:   "0.7",
-  }));
-
-  const xml = buildUrlSet(urls);
-  await cacheSet(CACHE_KEY, xml, 3600);
-  return sendXml(res, xml, 3600);
-}
-
+/** Eczane slug sayfaları — henüz aktif değil */
 async function servePharmacies(res, page) {
-  const CACHE_KEY = `sitemap:pharmacies:page:${page}`;
-  const cached = await cacheGet(CACHE_KEY);
-  if (cached) return sendXml(res, cached, 3600);
-
-  // slug kolonu yoksa boş sitemap döndür
   let rows = [];
   try {
     rows = await withDb((db) => db`
@@ -186,27 +287,20 @@ async function servePharmacies(res, page) {
       LIMIT 5000 OFFSET ${(page - 1) * 5000}
     `);
   } catch { /* tablo/kolon yok */ }
-
   if (!rows.length) return res.status(404).end();
 
-  const fallback = todayIso();
+  const today = todayIstanbul();
   const urls = rows.map(({ slug, updated_at }) => ({
     loc:        `/eczane/${slug}`,
-    lastmod:    updated_at ? toIsoDate(updated_at) : fallback,
+    lastmod:    updated_at ? toIsoDate(updated_at) : today,
     changefreq: "weekly",
     priority:   "0.6",
   }));
-
-  const xml = buildUrlSet(urls);
-  await cacheSet(CACHE_KEY, xml, 3600);
-  return sendXml(res, xml, 3600);
+  return sendXml(res, buildUrlSet(urls), 3600);
 }
 
+/** Blog sayfaları — henüz aktif değil */
 async function serveBlog(res) {
-  const CACHE_KEY = "sitemap:blog";
-  const cached = await cacheGet(CACHE_KEY);
-  if (cached) return sendXml(res, cached, 3600);
-
   let rows = [];
   try {
     rows = await withDb((db) => db`
@@ -215,46 +309,54 @@ async function serveBlog(res) {
       ORDER BY published_at DESC
     `);
   } catch { /* tablo yok */ }
-
   if (!rows.length) return res.status(404).end();
 
-  const now = Date.now();
-  const freshCutoff = now - 90 * 86400 * 1000;
-  const fallback = todayIso();
-
+  const freshCutoff = Date.now() - 90 * 86400 * 1000;
+  const today       = todayIstanbul();
   const urls = rows.map(({ slug, published_at, updated_at }) => ({
     loc:        `/blog/${slug}`,
-    lastmod:    updated_at ? toIsoDate(updated_at) : (published_at ? toIsoDate(published_at) : fallback),
+    lastmod:    updated_at ? toIsoDate(updated_at) : (published_at ? toIsoDate(published_at) : today),
     changefreq: "weekly",
     priority:   new Date(published_at).getTime() > freshCutoff ? "0.7" : "0.5",
   }));
-
-  const xml = buildUrlSet(urls);
-  await cacheSet(CACHE_KEY, xml, 3600);
-  return sendXml(res, xml, 3600);
+  return sendXml(res, buildUrlSet(urls), 3600);
 }
 
-// ─── Main handler ─────────────────────────────────────────────────────────────
+// ─── Route Çözümleyici ─────────────────────────────────────────────────────────
+
+/**
+ * "districts-2" → { base: "districts", page: 2 }
+ * "cities"      → { base: "cities",    page: 1 }
+ */
+function parseName(name) {
+  if (!name) return { base: null, page: 1 };
+  const m = name.match(/^(.+)-(\d+)$/);
+  if (m) return { base: m[1], page: parseInt(m[2], 10) };
+  return { base: name, page: 1 };
+}
+
+// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    res.status(405);
-    return res.end();
+    return res.status(405).end();
   }
 
-  const name = req.query?.name || null;
-  const page = Math.max(1, Number(req.query?.page ?? 1) || 1);
+  const rawName = req.query?.name || null;
+  const { base, page } = parseName(rawName);
 
   try {
-    switch (name) {
+    switch (base) {
       case null:
-      case undefined:
         return await serveIndex(res);
       case "static":
         return await serveStatic(res);
+      // "cities" yeni isim; eski "provinces" geriye dönük uyumluluk için korunuyor
+      case "cities":
       case "provinces":
-        return await serveProvinces(res);
+        return await serveCities(res);
+      // "districts" + "districts-N" sayfalama
       case "districts":
         return await serveDistricts(res, page);
       case "pharmacies":
@@ -262,12 +364,10 @@ export default async function handler(req, res) {
       case "blog":
         return await serveBlog(res);
       default:
-        res.status(404);
-        return res.end();
+        return res.status(404).end();
     }
-  } catch (error) {
-    console.error(`[sitemap:${name ?? "index"}] error:`, error?.message);
-    res.status(500);
-    return res.end();
+  } catch (err) {
+    console.error(`[sitemap:${rawName ?? "index"}]`, err?.message);
+    return res.status(500).end();
   }
 }

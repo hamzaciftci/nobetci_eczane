@@ -43,7 +43,7 @@ export async function generateMetadata({
   const ilceName =
     pharmacies[0]?.ilce ?? ilce.charAt(0).toUpperCase() + ilce.slice(1);
 
-  return districtMeta(il, ilceName);
+  return districtMeta(il, ilce, ilceName);
 }
 
 export default async function DistrictPage({

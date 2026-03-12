@@ -1,7 +1,5 @@
 {
-    "framework":  "vite",
-    "buildCommand":  "npm run build",
-    "outputDirectory":  "dist",
+    "framework":  "nextjs",
     "functions":  {
                       "api/cron/*.js":  {
                                             "maxDuration":  60
@@ -22,10 +20,6 @@
                          "source":  "/sitemap-:name.xml",
                          "destination":  "/api/sitemap?name=:name"
                      },
-                     {
-                         "source":  "/((?!api/).*)",
-                         "destination":  "/index.html"
-                     }
                  ],
     "headers":  [
                     {

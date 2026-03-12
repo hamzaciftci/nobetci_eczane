@@ -162,6 +162,11 @@ function buildMeta(title: string, description: string, url: string): Metadata {
       locale: "tr_TR",
       type: "website",
     },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
     alternates: { canonical: url },
   };
 }

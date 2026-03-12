@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { localBusinessSchema, websiteSchema } from "@/app/lib/schema";
+import { SchemaMarkup } from "@/app/components/SchemaMarkup";
+import { NearestCta } from "@/app/components/NearestCta";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -38,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="tr" className={inter.className}>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
+        <SchemaMarkup schemas={[localBusinessSchema(), websiteSchema()]} />
         {/* ── Header ───────────────────────────────────────────────── */}
         <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -66,6 +70,9 @@ export default function RootLayout({
         <main className="mx-auto max-w-6xl px-4 py-8">
           {children}
         </main>
+
+        {/* ── Floating CTA ─────────────────────────────────────────── */}
+        <NearestCta />
 
         {/* ── Footer ───────────────────────────────────────────────── */}
         <footer className="border-t border-gray-200 bg-white mt-16">

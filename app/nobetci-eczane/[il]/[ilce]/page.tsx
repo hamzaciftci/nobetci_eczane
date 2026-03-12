@@ -37,9 +37,9 @@ export const revalidate = 3600;
 export async function generateMetadata({
   params,
 }: {
-  params: { il: string; ilce: string };
+  params: Promise<{ il: string; ilce: string }>;
 }): Promise<Metadata> {
-  const { il, ilce } = params;
+  const { il, ilce } = await params;
   const pharmacies = await getDistrictDuty(il, ilce);
   const ilceName =
     pharmacies[0]?.ilce ?? ilce.charAt(0).toUpperCase() + ilce.slice(1);
@@ -49,9 +49,9 @@ export async function generateMetadata({
 export default async function DistrictPage({
   params,
 }: {
-  params: { il: string; ilce: string };
+  params: Promise<{ il: string; ilce: string }>;
 }) {
-  const { il, ilce } = params;
+  const { il, ilce } = await params;
 
   if (!provinces.find((p) => p.slug === il)) notFound();
 

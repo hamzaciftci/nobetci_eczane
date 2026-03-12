@@ -41,12 +41,13 @@ export function generateStaticParams() {
   return provinces.map((p) => ({ il: p.slug }));
 }
 
-export function generateMetadata({ params }: { params: { il: string } }): Metadata {
-  return cityMeta(params.il);
+export async function generateMetadata({ params }: { params: Promise<{ il: string }> }): Promise<Metadata> {
+  const { il } = await params;
+  return cityMeta(il);
 }
 
-export default async function CityPage({ params }: { params: { il: string } }) {
-  const { il } = params;
+export default async function CityPage({ params }: { params: Promise<{ il: string }> }) {
+  const { il } = await params;
 
   // Bilinmeyen slug → 404
   if (!provinces.find((p) => p.slug === il)) notFound();

@@ -6,8 +6,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MapPin, Clock, Shield, ChevronRight, Navigation } from "lucide-react";
-import { SchemaMarkup } from "./components/SchemaMarkup";
-import { websiteSchema } from "./lib/schema";
 import { homeMeta } from "./lib/meta";
 import { getToday } from "./lib/date";
 import { provinces } from "./lib/provinces";
@@ -38,8 +36,6 @@ export default function HomePage() {
 
   return (
     <>
-      <SchemaMarkup schemas={[websiteSchema()]} />
-
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section className="text-center py-12 md:py-16">
         <p className="text-sm font-medium text-blue-600 mb-3 uppercase tracking-widest">

@@ -62,12 +62,10 @@ function firstFit(candidates: string[], max: number): string {
 /** İlçe adını normalize eder (API'dan gelen büyük harf → Title Case). */
 function normalizeIlceName(raw: string): string {
   if (!raw) return raw;
-  // Türkçe Title Case: her kelimenin ilk harfi büyük
+  // Türkçe Title Case: her kelimenin ilk harfi büyük (tr-TR locale ile)
   return raw
-    .toLowerCase()
-    .replace(/(?:^|\s)\S/g, (c) => c.toUpperCase())
-    // Türkçeye özgü: "i" → "İ"  (toUpperCase TR locale olmadan)
-    .replace(/\bi\b/g, "İ");
+    .toLocaleLowerCase("tr-TR")
+    .replace(/(?:^|\s)\S/g, (c) => c.toLocaleUpperCase("tr-TR"));
 }
 
 // ─── Meta üreticiler ──────────────────────────────────────────────────────────
@@ -152,7 +150,8 @@ export function districtMeta(ilSlug: string, ilceSlug: string, ilceNameRaw: stri
 
 function buildMeta(title: string, description: string, url: string): Metadata {
   return {
-    title,
+    // `absolute` → layout template'ini bypass et, tam title kullan
+    title: { absolute: title },
     description,
     openGraph: {
       title,

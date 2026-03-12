@@ -25,7 +25,7 @@ import { getToday } from "@/app/lib/date";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "En Yakın Nöbetçi Eczane – Yakınımdaki Açık Eczane",
+  title: { absolute: "En Yakın Nöbetçi Eczane – Yakınımdaki Açık Eczane" },
   description:
     "GPS konumunuzu kullanarak en yakın nöbetçi eczaneyi saniyeler içinde bulun. Yakınımdaki nöbetçi eczane listesi — adres, telefon ve harita bilgileriyle.",
   openGraph: {

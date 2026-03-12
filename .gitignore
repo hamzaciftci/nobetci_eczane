@@ -18,3 +18,16 @@ apps/*/dist
 reports/comparison-*.json
 reports/verify-live-*.json
 reports/accuracy-report-*.json
+
+# Geçici dosyalar
+.tmp_*
+*.tmp
+verify-report-*.json
+scripts/diagnose-*.mjs
+scripts/debug-*.mjs
+scripts/check-*.mjs
+scripts/capture-*.mjs
+
+# Doküman dosyaları
+*.docx
+*.pdf
